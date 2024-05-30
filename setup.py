@@ -22,6 +22,5 @@ setup(
     install_requires=[
         'numpy>=1.20.0',
         'pyFAI>=0.20.0',
-        'PSCalib>=0.0.0',
     ],
 )
