@@ -57,7 +57,9 @@ Now that the different coordinate systems has been introduced, we will move on e
 
 ### Psana Format
 This is an LCLS internal geometry file format. It uses a hierarchical representation of the detector: first come pixels, then asics, then panels, and then the IP. To be more consice, every children frame is defined in its parent frame. Parents can have multiple children, but every child only has one parent. For example, a geometry definition for the ePix10k2M detector (exp: mfxx49820) will look as such:
+
 ![image](https://github.com/LouConreux/LCLSGeom/assets/139856363/2c436fbb-16fd-4fd4-8b45-2a7894da2706)
+
 Every panel _EPIX10KA:V1_ frame origin is expressed in the _CAMERA_ frame by six parameters: X0, Y0, Z0, ROT-Z, ROT-Y, ROT-X (if you want to take into account small angle deviations, the true rotations to be applied should rather be then (ROT-v + TILT-v)). The _CAMERA_ object is the name given to the center of the detector. Likewise, the _CAMERA_ frame origin is then expressed in the IP frame. Then, optimizing the geometry is only a matter of finding the optimal X0, Y0, Z0, ROT-Z, ROT-Y, ROT-X of the _CAMERA_ origin in the IP frame, and further expressed the downstream object frames is the newly defined _CAMERA_ frame.  
 
 For more information, go to [detector geometry definition](https://confluence.slac.stanford.edu/display/PSDM/Detector+Geometry#DetectorGeometry-Childgeometryobjectintheparentframe).
@@ -65,19 +67,32 @@ For more information, go to [detector geometry definition](https://confluence.sl
 ### CrystFEL Format
 
 The _CrystFEL_ format is a more straight-forward way of defining a geometry. In a .geom file, there is no hierarchy involved, everything is expressed in the chosen system of coordinates. Let's stick with the previous example, here what the ePix10k2M .geom file will look like:
+
 ![image](https://github.com/LouConreux/LCLSGeom/assets/139856363/b4073fc3-22ce-456c-816b-3f11fc24bb8b)
 
+
 In a .geom file, it assumes that a geometry object is defined by a name _'piaj'_ where _i_ is the panel index and _j_ is the asic index. In the case of the ePix10k2M, _i_ would lie between 0 and 15 (16 panels) and _j_ would lie between 0 and 3 (4 asics per panel). Then, every geometry object 'piaj' has 11 parameters that defines it geometry:
+
 _fs_: vector in the chosen coordinate system of the fast dimension
+
 _ss_: vector in the chosen coordinate system of the slow dimension
+
 _res_: resolution of the detector (1/pixel size)
-_corner_x_: position in x (chosen coordinate system) of the corner of this panel/asic. A corner is defined as the first point in the panel/asic to appear in the image data. Units are in pixel widths of the current panel/asic.
+
+_corner_x_: position in x (chosen coordinate system) of the corner of this panel/asic. A corner is defined as the first point in the panel/asic to appear in the image data. Units are in pixel widths of the current panel/asic
+
 _corner_y_: position in y (chosen coordinate system) of the corner of this panel/asic
-_coffest_: position in z (chosen coordinate system) of this panel/asic from the position given by the camera length.
+
+_coffest_: position in z (chosen coordinate system) of this panel/asic from the position given by the camera length
+
 _min_fs_: minimal pixel index of current panel/asic in fast dimension
+
 _max_fs_: maximal pixel index of current panel/asic in fast dimension
+
 _min_ss_: minimal pixel index of current panel/asic in slow dimension
+
 _max_ss_: maximal pixel index of current panel/asic in slow dimension
+
 _no_index_: do not matter
 
 <ins>Nota Bene</ins>
@@ -104,18 +119,24 @@ A geometry calibration starts with a _psana_ .data file and is supposed to end w
 
 ## Optimization and Powder Preprocessing
 
-PyFAI optimization will likely to need some preprocessing of the powder (as discussed in here: ) explaining why I am regrouping these two in one sub-category. 
+PyFAI optimization will likely to need some preprocessing of the powder (as discussed in [here](https://github.com/lcls-users/btx/issues/375#issuecomment-2156856817)) explaining why I am regrouping these two in one sub-category. 
 
 PyFAI provides a potential robust and fast geometry calibration workflow that was also described in here. PyFAI takes as an input a flattened pixel corner array (N<sub>mods</sub> x dim(ss), dim(fs), 4, 3) where _N<sub>mods</sub>_ is the number of panels that the detector has, _dim(ss)_ is the number of pixels in the slow-scan direction, _dim(fs)_ the number of pixels in the fast-scan direction, 4 because a pixel has 4 corners, and 3 for the 3 coordinates.  This pixel corner array is then used to instantiate a pyFAI Detector object where the optimization can be done given a powder data.
 
 ## New Geometry Definition
 
 Once the optimization is done, pyFAI will give 6 optimal parameters:
-_dist_: distance IP-PONI where PONI is the Point of Normal Incidence.
+
+_dist_: distance IP-PONI where PONI is the Point of Normal Incidence
+
 _poni1_: slow-scan coordinate of PONI
+
 _poni2_: fast-scan coordinate of PONI
+
 _rot1_: rotation over slow-scan direction
+
 _rot2_: rotation over fast-scan direction
+
 _rot3_: rotation over beam direction
 
 ![PONI](https://github.com/lcls-users/btx/assets/139856363/4ab3b2d7-525a-42b2-a2c8-161cdb85c6bb)
