@@ -1,8 +1,8 @@
 import numpy as np
 from pyFAI.detectors import Detector
-from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel ,panel_constants_to_crystfel
+from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel, panel_constants_to_crystfel
 from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
-from PSCalib.GeometryAccess import GeometryAccess
+from PSCalib.GeometryAccess import GeometryAccess, SEGNAME_TO_PARS
 
 class ePix10k2M(Detector):
     """
@@ -384,13 +384,110 @@ class CrystFELtoPyFAI:
                     pyfai_fmt[ss_portion, fs_portion, :, 2] = x  # 2: left to right
         return pyfai_fmt
     
-class PyFAItoPsana:
+class PyFAItoCrystFEL:
     """
-    Class to write psana .data and .geom geometry files from PyFAI SingleGeometry instance
+    Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
     def __init__(self, sg, psana_file, output_dir):
         self.sg = sg
-        self.poni1 = sg.poni1
-        self.poni2 = sg.poni2
-        self.distance = sg.distance
+        self.psana_file = psana_file
+        self.output_dir = output_dir
+        self.detector = sg.detector
+        self.geom = GeometryAccess(psana_file, pbits=0, use_wide_pix_center=False)
+    
+    def get_pixel_coords(self, oname=None, oindex=0, do_tilt=True, cframe=CFRAME_PSANA):
+        """
+        Get pixel coordinates for a given detector object
+
+        Parameters
+        ----------
+        oname : str
+            Detector object name
+        oindex : int
+            Detector object index
+        do_tilt : bool
+            Apply detector tilt
+        cframe : int
+            Reference frame
+        """
+        X, Y, Z = self.geom.get_pixel_coords(oname, oindex, do_tilt, cframe)
+        self.X = X
+        self.Y = Y
+        self.Z = Z
+
+    def Rz(self, X, Y, Z, angle_z):
+        """
+        Return the X, Y, Z coordinates rotated around z-axis by angel_z
+        """
+        c, s = np.cos(angle_z), np.sin(angle_z)
+        Rz = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+        return np.dot(Rz, np.array([X, Y, Z]))
+    
+    def Ry(self, X, Y, Z, angle_y):
+        """
+        Return the X, Y, Z coordinates rotated around y-axis by angel_y
+        """
+        c, s = np.cos(angle_y), np.sin(angle_y)
+        Ry = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
+        return np.dot(Ry, np.array([X, Y, Z]))
+    
+    def Rx(self, X, Y, Z, angle_x):
+        """
+        Return the X, Y, Z coordinates rotated around x-axis by angel_x
+        """
+        c, s = np.cos(angle_x), np.sin(angle_x)
+        Rx = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+        return np.dot(Rx, np.array([X, Y, Z]))
+    
+    def translation(self, X, Y, Z, dx, dy, dz):
+        """
+        Return the X, Y, Z coordinates translated by dx, dy, dz
+        """
+        return X + dx, Y + dy, Z + dz
+    
+    def correct_geom(self, poni1, poni2, dist, rot1, rot2, rot3):
+        """
+        Correct the geometry based on the given parameters
+        """
+        X, Y, Z = self.X, self.Y, self.Z
+        for i in range(X.size):
+            X[i], Y[i], Z[i] = self.translation(X[i], Y[i], Z[i], -poni1, -poni2, dist)
+            X[i], Y[i], Z[i] = self.Rx(X[i], Y[i], Z[i], -rot1)
+            X[i], Y[i], Z[i] = self.Ry(X[i], Y[i], Z[i], -rot2)
+            X[i], Y[i], Z[i] = self.Rz(X[i], Y[i], Z[i], rot3)
+        self.X, self.Y, self.Z = X, Y, Z
+    
+    def geometry_to_crystfel(self, psana_file, output_file, cframe=CFRAME_LAB, zcorr_um=None):
+        """
+        From corrected X, Y, Z coordinates, write a CrystFEL .geom file
+        """
+        X, Y, Z = self.X, self.Y, self.Z
+        geom = self.geom
+        geom1 = geom.get_seg_geo() # GeometryObject
+        seg = geo1m.algo # object of the SegmentGeometry subclass
+
+        segname = geom1.oname
+        assert segname in SEGNAME_TO_PARS.keys(),\
+        'segment name %s is not found in the list of implemented detectors %s'%(segname, str(SEGNAME_TO_PARS.keys()))
+        valid_nsegs = SEGNAME_TO_PARS[segname]
+
+        nsegs = int(X.size/seg.size())
+        assert nsegs in valid_nsegs, 'number of %s segments %d should be in %s' % (seg.name(), nsegs, str(valid_nsegs))
+
+        shape = (nsegs,) + seg.shape() # (nsegs, srows, scols)
+
+        X.shape = shape
+        Y.shape = shape
+        Z.shape = shape
+
+        txt = header_crystfel()
+        for n in range(nsegs):
+            z_um = Z[n,:]
+            if zcorr_um is not None: z_um -= zcorr_um
+            txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], z_um)
+
+        if output_file is not None:
+            f = open(output_file,'w')
+            f.write(txt)
+            f.close()
