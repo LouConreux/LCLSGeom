@@ -417,47 +417,46 @@ class PyFAItoCrystFEL:
         self.Y = Y
         self.Z = Z
 
-    def Rz(self, X, Y, Z, angle_z):
+    def Rz(self, angle_z):
         """
         Return the X, Y, Z coordinates rotated around z-axis by angel_z
         """
         c, s = np.cos(angle_z), np.sin(angle_z)
         Rz = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-        return np.dot(Rz, np.array([X, Y, Z]))
+        self.X, self.Y, self.Z = np.dot(Rz, np.array([self.X, self.Y, self.Z]))
     
-    def Ry(self, X, Y, Z, angle_y):
+    def Ry(self, angle_y):
         """
         Return the X, Y, Z coordinates rotated around y-axis by angel_y
         """
         c, s = np.cos(angle_y), np.sin(angle_y)
         Ry = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]])
-        return np.dot(Ry, np.array([X, Y, Z]))
+        self.X, self.Y, self.Z = np.dot(Ry, np.array([self.X, self.Y, self.Z]))
     
-    def Rx(self, X, Y, Z, angle_x):
+    def Rx(self, angle_x):
         """
         Return the X, Y, Z coordinates rotated around x-axis by angel_x
         """
         c, s = np.cos(angle_x), np.sin(angle_x)
         Rx = np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
-        return np.dot(Rx, np.array([X, Y, Z]))
+        self.X, self.Y, self.Z = np.dot(Rx, np.array([self.X, self.Y, self.Z]))
     
-    def translation(self, X, Y, Z, dx, dy, dz):
+    def translation(self, dx, dy, dz):
         """
         Return the X, Y, Z coordinates translated by dx, dy, dz
         """
-        return X + dx, Y + dy, Z + dz
+        self.X =+ dx
+        self.Y =+ dy
+        self.Z =+ dz
     
     def correct_geom(self, poni1, poni2, dist, rot1, rot2, rot3):
         """
         Correct the geometry based on the given parameters
         """
-        X, Y, Z = self.X, self.Y, self.Z
-        for i in range(X.size):
-            X[i], Y[i], Z[i] = self.translation(X[i], Y[i], Z[i], -poni1, -poni2, dist)
-            X[i], Y[i], Z[i] = self.Rx(X[i], Y[i], Z[i], -rot1)
-            X[i], Y[i], Z[i] = self.Ry(X[i], Y[i], Z[i], -rot2)
-            X[i], Y[i], Z[i] = self.Rz(X[i], Y[i], Z[i], rot3)
-        self.X, self.Y, self.Z = X, Y, Z
+        self.translation(-poni1*1e6, -poni2*1e6, np.mean(self.Z)-dist*1e3)
+        self.Rx(-rot1)
+        self.Ry(-rot2)
+        self.Rz(rot3) 
     
     def geometry_to_crystfel(self, psana_file, output_file, cframe=CFRAME_LAB, zcorr_um=None):
         """
