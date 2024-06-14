@@ -466,7 +466,7 @@ class PyFAItoCrystFEL:
         X, Y, Z = self.X, self.Y, self.Z
         geom = self.geom
         geom1 = geom.get_seg_geo() # GeometryObject
-        seg = geo1m.algo # object of the SegmentGeometry subclass
+        seg = geom1.algo # object of the SegmentGeometry subclass
 
         segname = geom1.oname
         assert segname in SEGNAME_TO_PARS.keys(),\
