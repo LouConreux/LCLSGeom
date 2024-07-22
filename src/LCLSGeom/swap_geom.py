@@ -4,6 +4,7 @@ from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel, panel_co
 from PSCalib.UtilsConvertCrystFEL import convert_crystfel_to_geometry
 from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
 from PSCalib.GeometryAccess import GeometryAccess
+
 class ePix10k2M(Detector):
     """
     PyFAI Detector instance for the ePix10k2M
