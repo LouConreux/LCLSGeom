@@ -209,7 +209,10 @@ This class takes as input a _SingleGeometry_ PyFAI object _sg_, where the result
 
 ### Example of Usage
 ```
-PyFAItoCrystFEL(sg=sg, psana_file=psana_file, pixel_array=pixel_array, output_file='path/to/geom/mfx/mfxx49820/r0008.geom')
+psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'
+pixel_array = CrystFELtoPyFAI_converter.pix_pos
+output_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
+PyFAItoCrystFEL(sg=sg, psana_file=psana_file, pixel_array=pixel_array, output_file=output_file)
 ```
 
 ## _CrystFELtoPsana_
@@ -225,6 +228,6 @@ Valid det_types are:
 ### Example of Usage
 ```
 geom_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
-output_file='path/to/geom/mfx/mfxx49820/r0008.data'
+output_file = 'path/to/geom/mfx/mfxx49820/r0008.data'
 CrystFELtoPsana(geom_file=geom_file, det_type='epix10ka', output_file=output_file)
 ```
