@@ -1,7 +1,7 @@
 # LCLSGeom
-Louis Conreux's Luminescent Swapping Geometry tool - miscellaneous functions for converting geometry files for LCLS geometry calibrations and optimizations.
+LCLSwapping Geometry tool - miscellaneous functions for converting geometry files for LCLS geometry calibrations and optimizations.
 
-# Description
+# Package Description
 
 This repository aims at centralizing and uniformizing LCLS routines to write, convert and switch between different geometry files format. The main code mainly relies on the [PSCalib](https://github.com/lcls-psana/PSCalib/tree/master) repository that was designed by Mikhail Dubrovin. For reference frame definition, we will adopt the traditional (x,y,z) description: x being the first coordinate, y the second and z the third.
 
@@ -21,7 +21,7 @@ This is the traditional system of coordinates when conducting an experiment. Acc
 +z axis pointing from IP along the photon beam propagation direction
 
 ### Psana Coordinate System
-This is the coordinate system used in metrology measurements. According to the [geometry_converter code](https://confluence.slac.stanford.edu/display/PSDM/Geometry+converter+between+psana+and+CrystFEL#GeometryconverterbetweenpsanaandCrystFEL-Generalremarks), the _psana_ coordinate system can be transformed into the _CrystFEL_ coordinate system by doing those operations:
+This is the coordinate system used in metrology measurements. According to the [geometry_converter code](https://confluence.slac.stanford.edu/display/PSDM/Geometry+converter+between+psana+and+CrystFEL#GeometryconverterbetweenpsanaandCrystFEL-Generalremarks), the _psana_ coordinate system can be transformed into the _Lab_ coordinate system by doing those operations:
 
 ![psana_to_lab](https://github.com/lcls-users/btx/assets/139856363/751893f8-7e11-4506-aa33-721eda35fa60)
 Hence, in this system:
@@ -46,12 +46,6 @@ Hence, in this system:
 
 +z is along the beam direction
 
-### Frame Transformations
-Wrapping everything, the different frame definition can be drawn as such:
-
-![image](https://github.com/LouConreux/LCLSGeom/assets/139856363/10c99409-1c85-463b-be9c-c04b0f692f94)
-
-
 ## Geometry Format & Environment
 Now that the different coordinate systems has been introduced, we will move on explaining how geometries are defined in each geometry file format.
 
@@ -71,7 +65,7 @@ The _CrystFEL_ format is a more straight-forward way of defining a geometry. In 
 ![image](https://github.com/LouConreux/LCLSGeom/assets/139856363/b4073fc3-22ce-456c-816b-3f11fc24bb8b)
 
 
-In a .geom file, it assumes that a geometry object is defined by a name _'piaj'_ where _i_ is the panel index and _j_ is the asic index. In the case of the ePix10k2M, _i_ would lie between 0 and 15 (16 panels) and _j_ would lie between 0 and 3 (4 asics per panel). Then, every geometry object 'piaj' has 11 parameters that defines it geometry:
+In a .geom file, it assumes that a geometry object is defined by a name _'piaj'_ where _i_ is the panel index and _j_ is the asic index. In the case of the ePix10k2M, _i_ would lie between 0 and 15 (16 panels) and _j_ would lie between 0 and 3 (4 asics per panel). Then, every geometry object 'piaj' has 11 parameters that defines the geometry as a whole:
 
 _fs_: vector in the chosen coordinate system of the fast dimension
 
@@ -144,8 +138,93 @@ _rot3_: rotation over beam direction
 <ins>Nota Bene</ins>
 These parameters in fact define the translations and rotations that need to be applied to correct the current detector frame.
 
-According to [pyFAI Geometry Definition](https://pyfai.readthedocs.io/en/v2023.1/geometry_conversion.html#geometry-definition-of-pyfai), given those parameters, a pixel coordinate (x,y,z) in the detector frame can be translated into (X,Y,Z) coordinates in the chosen reference frame following this math:
-![image](https://github.com/LouConreux/LCLSGeom/assets/139856363/897a4510-f9d4-4433-a40e-b7231c25c2b8)
+Hence, once finally optimized, the correct geometry is obtained through adequate translations and rotations. Applying those to the uncalibrated X, Y, Z coordinates, we can then write a new _CrystFEL_ .geom file, and finally write a new _psana_ .data file thanks to the PSCalib code.
 
-So, by applying first the translations and then the rotations onto the current (x,y,z) coordinates, we can find the true (X,Y,Z) pixel coordinates. From that, we can write a script to write a _CrystFEL_ format .geom file and finally convert that into an optimized _psana_ .data file.
+"La boucle est bouclée", the circle is complete in French!
 
+# Organization
+
+The package structure is organized as follows:
+
+```
+LCLS/
+├── src/ # Main package
+│ ├── init.py # Package initialization
+│ ├── swap_geom.py # Main module
+├── tests/ # Unit tests
+│ ├── init.py # Test package initialization
+│ ├── test_swap_geom.py # Tests for main module
+│ ├── data/ # Geometry files for tests
+│   ├── ePix10k2M_0-end.data # psana file for ePix10k2M (mfxx49820)
+│   ├── Jungfrau4M_0-end.data # psana file for Jungfrau4M (cxil1015922)
+│   └── Rayonix_0-end.data # psana file for Rayonix (mfxl1015222)
+│ ├── figs/ # Figures for visual verification of tests
+├── LICENSE # License file
+├── README.md # Readme file
+├── requirements.txt # Dependencies and requirements
+└── setup.py # Setup script for packaging
+```
+
+# Usage
+
+The main module _swap_geom.py_ consists in four pyFAI detector definition as well as four major conversion classes. One for each conversion needed: _Psana_ to _CrystFEL_, _CrystFEL_ to _PyFAI_, _PyFAI_ to _CrystFEL_, and finally _CrystFEL_ back to _Psana_.
+
+## _PsanatoCrystFEL_
+
+This class takes as input a _Psana_ geometry .data file, a path for the output _CrystFEL_ .geom file, as well as the _det_type_ for the adequate detector.
+At the moment, valid _det_type_ are:
+- "epix10k2M"
+- "Rayonix" or "rayonix"
+- "jungfrau4M"
+- "Epix10kaQuad.{i}" where i stands for the quad index
+
+### Example of Usage
+```
+psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'
+output_file = 'path/to/geom/mfx/mfxx49820/r0000.geom'
+PsanatoCrystFEL(psana_file=psana_file, output_file=output_file, det_type="epix10k2M")
+```
+
+## _CrystFELtoPyFAI_
+
+This class takes as input a _CrystFEL_ .geom file and the _det_type_ for the adequate detector. One could choose to use the pixel coordinates from the corresponding _Psana_ .data file by passing it to the optional argument _psana_file_. By default, the script assumes the _CrystFEL_ .geom file was written in the _Psana_ coordinate system. One can change that by passing the optional argument _cframe_ from 0 (_Psana_) to 1 (_Lab_ coordinates).
+At the moment, valid _det_type_ are:
+- "epix10k2M"
+- "Rayonix" or "rayonix"
+- "jungfrau4M"
+- "Epix10kaQuad.{i}" where i stands for the quad index
+
+### Example of Usage
+```
+psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'  # Optional
+geom_file = 'path/to/geom/mfx/mfxx49820/r0000.geom'
+converter = CrystFELtoPyFAI(geom_file=geom_file, det_type="epix10k2M", psana_file=None, cframe=0)
+pixel_array = converter.pix_pos   # Pixel coordinates fed to pyFAI
+epix10k2M = converter.detector    # PyFAI Detector Object with correct pixel corner array
+```
+
+## _PyFAItoCrystFEL_
+
+This class takes as input a _SingleGeometry_ PyFAI object _sg_, where the result of the optimization is stored, any _Psana_ .data file to access the necessary segmentation infos of the detector, the initial pixel coordinates _pixel_array_ that was fed to PyFAI, and a path for the _CrystFEL_ .geom file _output_file_.
+
+### Example of Usage
+```
+PyFAItoCrystFEL(sg=sg, psana_file=psana_file, pixel_array=pixel_array, output_file='path/to/geom/mfx/mfxx49820/r0008.geom')
+```
+
+## _CrystFELtoPsana_
+
+This class takes as input a _CrystFEL_ .geom file, a valid _det_type_ and a path for the _output_file_. However, at the moment, PSCalib converter code is only implemented for certain detectors.
+Valid det_types are:
+- "epix10ka"
+- "jungfrau"
+- "cspad"
+- "cspadv2"
+- "pnccd"
+
+### Example of Usage
+```
+geom_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
+output_file='path/to/geom/mfx/mfxx49820/r0008.data'
+CrystFELtoPsana(geom_file=geom_file, det_type='epix10ka', output_file=output_file)
+```
