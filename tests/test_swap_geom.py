@@ -4,7 +4,6 @@ from pyFAI.geometry import Geometry
 from pyFAI.azimuthalIntegrator import AzimuthalIntegrator
 from pyFAI.calibrant import CalibrantFactory, CALIBRANT_FACTORY
 from pyFAI.goniometer import SingleGeometry
-from btx.interfaces import PsanaInterface
 import numpy as np
 from scipy.signal import find_peaks
 
@@ -18,6 +17,7 @@ class mfxx49820_run8:
         self.dist = 0.282
         self.poni1 = -0.00079
         self.poni2 = -0.00067
+        self.wavelength = 1.2910925615868107e-10
 
 class mfxx49820_run15:
     def __init__(self):
@@ -29,6 +29,7 @@ class mfxx49820_run15:
         self.dist = 0.282
         self.poni1 = -0.00030
         self.poni2 = -0.00252
+        self.wavelength = 1.290614189196602e-10
     
 class cxil1019522_run5:
     def __init__(self):
@@ -40,6 +41,7 @@ class cxil1019522_run5:
         self.dist = 0.147
         self.poni1 = 0.0
         self.poni2 = 0.0
+        self.wavelength = 1.3992865102162315e-10
 
 class mfxl1015222_run6:
     def __init__(self):
@@ -51,11 +53,9 @@ class mfxl1015222_run6:
         self.dist = 0.104
         self.poni1 = 0.0
         self.poni2 = 0.0
+        self.wavelength = 1.1047305314738256e-10
 
 def generate_data_radial_integration(test):
-    # Retrieve exp info
-    psi = PsanaInterface(test.exp, test.run, test.det_type)
-
     # Generate the pyFAI detector geometry object
     PsanatoCrystFEL(test.geomfile, test.geomfile.replace(".data", ".geom"), det_type=test.det_type)
     conv = CrystFELtoPyFAI(test.geomfile.replace(".data", ".geom"), psana_file=test.geomfile, det_type=test.det_type)
@@ -65,13 +65,11 @@ def generate_data_radial_integration(test):
     # Load powder data
     powder_img = np.load(test.powder)
     behenate = CALIBRANT_FACTORY('AgBh')
-    wavelength = psi.get_wavelength() * 1e-10
-    behenate.wavelength = wavelength
-    test.wavelength = wavelength
+    behenate.wavelength = test.wavelength
     test.powder_img = powder_img
 
     # Optimize geometry both in translations and rotations
-    geom_initial = Geometry(dist=test.dist, poni1=test.poni1, poni2=test.poni2, detector=det, wavelength=wavelength)
+    geom_initial = Geometry(dist=test.dist, poni1=test.poni1, poni2=test.poni2, detector=det, wavelength=test.wavelength)
     sg = SingleGeometry("optimization", powder_img, calibrant=behenate, detector=det, geometry=geom_initial)
     sg.extract_cp(max_rings=5, pts_per_deg=1, Imin=np.max(powder_img)/100)
     score = sg.geometry_refinement.refine3(fix=["wavelength"])
@@ -121,7 +119,7 @@ def test_CrystFELtoPsana(test, q_peaks, I_peaks):
     dist = test.dist
     poni1 = 0
     poni2 = 0
-    ai = AzimuthalIntegrator(dist=dist, poni1=poni1, poni2=poni2, detector=det_test, wavelength=test.wavelength())
+    ai = AzimuthalIntegrator(dist=dist, poni1=poni1, poni2=poni2, detector=det_test, wavelength=test.wavelength)
     q, I, sigma = ai.integrate1d(test.powder_img, 1000, unit='q_A^-1', error_model="poisson")
 
     # Find peaks
