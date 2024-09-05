@@ -1,0 +1,23 @@
+
+# TITLE       geometry
+# AUTHOR      yoon82
+# CALIB_TYPE  geometry
+# COMMENT:01  WRITTEN BY USER 
+# DATE_TIME   4-29-2022	23:34:22.313123
+# PARAM:01    PARENT     - name and version of the parent object
+# PARAM:02    PARENT_IND - index of the parent object
+# PARAM:03    OBJECT     - name and version of the object
+# PARAM:04    OBJECT_IND - index of the new object
+# PARAM:05    X0         - x-coordinate [um] of the object origin in the parent frame
+# PARAM:06    Y0         - y-coordinate [um] of the object origin in the parent frame
+# PARAM:07    Z0         - z-coordinate [um] of the object origin in the parent frame
+# PARAM:08    ROT_Z      - object design rotation angle [deg] around Z axis of the parent frame
+# PARAM:09    ROT_Y      - object design rotation angle [deg] around Y axis of the parent frame
+# PARAM:10    ROT_X      - object design rotation angle [deg] around X axis of the parent frame
+# PARAM:11    TILT_Z     - object tilt angle [deg] around Z axis of the parent frame
+# PARAM:12    TILT_Y     - object tilt angle [deg] around Y axis of the parent frame
+# PARAM:13    TILT_X     - object tilt angle [deg] around X axis of the parent frame
+# HDR         PARENT IND        OBJECT IND     X0[um]   Y0[um]   Z0[um]   ROT-Z ROT-Y ROT-X     TILT-Z   TILT-Y   TILT-X
+
+        root    0     MTRX:V2:1920:1920:89:89    0    32.832100  -303.593865     0.000000   270.000000   180.000000   180.000000     0.000000     0.000000     0.000000
+          IP    0             root    0     0.000000     0.000000 104000.000000     0.000000     0.000000     0.000000     0.000000     0.000000     0.000000

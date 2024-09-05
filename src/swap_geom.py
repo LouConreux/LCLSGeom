@@ -21,7 +21,7 @@ class ePix10k2M(Detector):
         ss_size=176,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[1] * ss_size, asics_shape[0] * fs_size), **kwargs)
+        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
         self.n_modules = n_modules
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -45,7 +45,7 @@ class ePix10kaQuad(Detector):
         ss_size=176,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[1] * ss_size, asics_shape[0] * fs_size), **kwargs)
+        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
         self.n_modules = n_modules
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -64,12 +64,12 @@ class Jungfrau4M(Detector):
         pixel2=0.075,
         n_modules=8,
         n_asics=8,
-        asics_shape=(4, 2), # (rows, cols) = (ss, fs)
+        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         fs_size=256,
         ss_size=256,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[1] * ss_size, asics_shape[0] * fs_size), **kwargs)
+        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
         self.n_modules = n_modules
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -95,6 +95,8 @@ class Rayonix(Detector):
     ):
         super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * ss_size, fs_size), **kwargs)
         self.n_modules = n_modules
+        self.n_asics = n_asics
+        self.asics_shape = asics_shape
         self.ss_size = ss_size
         self.fs_size = fs_size
         self.pixel_size = pixel1
@@ -158,7 +160,7 @@ class CrystFELtoPyFAI:
             return ePix10kaQuad()
         elif det_type == "jungfrau4M":
             return Jungfrau4M()
-        elif det_type == "rayonix" or det_type == "Rayonix":
+        elif det_type == "Rayonix":
             return Rayonix()
         else:
             raise ValueError("Detector type not recognized")
@@ -304,8 +306,12 @@ class CrystFELtoPyFAI:
                 for asic in range(nasics):
                     asicname = f"a{asic}"
                     full_name = pname + asicname
-                    arow = asic // (nasics//2)
-                    acol = asic % (nasics//2)
+                    if nasics == 1:
+                        arow = 0
+                        acol = 0
+                    else:
+                        arow = asic // (nasics//2)
+                        acol = asic % (nasics//2)
                     ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
                     fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
                     res = panels["panels"][full_name]["res"]
@@ -331,8 +337,12 @@ class CrystFELtoPyFAI:
             x, y, z = geom.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=CFRAME_PSANA)
             for p in range(nmods):
                 for asic in range(nasics):
-                    arow = asic // (nasics//2)
-                    acol = asic % (nasics//2)
+                    if nasics == 1:
+                        arow = 0
+                        acol = 0
+                    else:
+                        arow = asic // (nasics//2)
+                        acol = asic % (nasics//2)
                     ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
                     fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
                     pix_arr[p, ss_portion, fs_portion, 0] = x[p, ss_portion, fs_portion]
@@ -371,9 +381,13 @@ class CrystFELtoPyFAI:
             pname = f"p{p}"
             for asic in range(nasics):
                 full_name = f"{pname}a{asic}"
-                arow = asic // (nasics//2)
-                acol = asic % (nasics//2)
-                slab_offset = p * asics_shape[1] *ss_size
+                if nasics == 1:
+                    arow = 0
+                    acol = 0
+                else:
+                    arow = asic // (nasics//2)
+                    acol = asic % (nasics//2)
+                slab_offset = p * asics_shape[0] *ss_size
                 ss_portion = slice(
                     arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset
                 )
