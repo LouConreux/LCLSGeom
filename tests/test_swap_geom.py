@@ -11,7 +11,7 @@ from scipy.signal import find_peaks
 
 class mfxx49820_run8:
     def __init__(self):
-        self.geom_file = "data/geom/ePix10k2M_0-end.data"
+        self.geomfile = "data/geom/ePix10k2M_0-end.data"
         self.powder = "data/powder/mfxx49820/calib_max_flat_r0008.npy"
         self.exp = "mfxx49820"
         self.run = 8
@@ -23,7 +23,7 @@ class mfxx49820_run8:
 
 class mfxx49820_run15:
     def __init__(self):
-        self.geom_file = "data/geom/ePix10k2M_0-end.data"
+        self.geomfile = "data/geom/ePix10k2M_0-end.data"
         self.powder = "data/powder/mfxx49820/calib_max_flat_r0015.npy"
         self.exp = "mfxx49820"
         self.run = 15
@@ -35,7 +35,7 @@ class mfxx49820_run15:
     
 class cxil1019522_run5:
     def __init__(self):
-        self.geom_file = "data/geom/Jungfrau4M-0_end.data"
+        self.geomfile = "data/geom/Jungfrau4M-0_end.data"
         self.powder = "data/powder/cxil1019522/calib_max_flat_r0005.npy"
         self.exp = "cxil1019522"
         self.run = 5
@@ -47,7 +47,7 @@ class cxil1019522_run5:
 
 class mfxl1015222_run6:
     def __init__(self):
-        self.geom_file = "data/geom/Rayonix_0-end.data"
+        self.geomfile = "data/geom/Rayonix_0-end.data"
         self.powder = "data/powder/mfxl1015222/calib_max_flat_r0006.npy"
         self.exp = "mfxl1015222"
         self.run = 6
