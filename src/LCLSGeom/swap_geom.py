@@ -1,6 +1,6 @@
 import numpy as np
 from pyFAI.detectors import Detector
-from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel, panel_constants_to_crystfel, SEGNAME_TO_PARS
+from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel, panel_constants_to_crystfel
 from PSCalib.UtilsConvertCrystFEL import convert_crystfel_to_geometry
 from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
 from PSCalib.GeometryAccess import GeometryAccess
@@ -106,20 +106,14 @@ class PsanatoCrystFEL:
     Class to convert psana .data geometry files to CrystFEL .geom geometry files in the desired reference frame
     """
 
-    def __init__(self, psana_file, output_file, det_type, cframe=CFRAME_PSANA, zcorr_um=None):
-        if det_type == "Rayonix":
-            self.rayonix_geometry_to_crystfel(psana_file, output_file, cframe, zcorr_um)
-        else:
-            geometry_to_crystfel(psana_file, output_file, cframe, zcorr_um)
+    def __init__(self, psana_file, output_file, cframe=CFRAME_PSANA, zcorr_um=None):
+        self.geometry_to_crystfel(psana_file, output_file, cframe, zcorr_um)
 
-    def rayonix_geometry_to_crystfel(self, psana_file, output_file, cframe=CFRAME_PSANA, zcorr_um=None):
+    def geometry_to_crystfel(self, psana_file, output_file, cframe=CFRAME_PSANA, zcorr_um=None):
         geo = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
-        top = geo.get_top_geo()
-        child = top.get_list_of_children()[0]
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=cframe)
+        x, y, z = geo.get_pixel_coords(oname=None, oindex=0, do_tilt=True, cframe=cframe)
         geo1 = geo.get_seg_geo() # GeometryObject
         seg = geo1.algo # object of the SegmentGeometry subclass
-        segname = geo1.oname
         nsegs = int(x.size/seg.size())
         shape = (nsegs,) + seg.shape() # (nsegs, srows, scols)
         x.shape = shape
@@ -427,7 +421,7 @@ class PyFAItoCrystFEL:
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
-    def __init__(self, sg, psana_file, pixel_array, output_file):
+    def __init__(self, sg, pixel_array, psana_file, output_file):
         self.sg = sg
         self.pixel_array = pixel_array
         self.detector = sg.detector
@@ -570,21 +564,11 @@ class PyFAItoCrystFEL:
         geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
         geom1 = geom.get_seg_geo() # GeometryObject
         seg = geom1.algo # object of the SegmentGeometry subclass
-
-        segname = geom1.oname
-        assert segname in SEGNAME_TO_PARS.keys(),\
-        'segment name %s is not found in the list of implemented detectors %s'%(segname, str(SEGNAME_TO_PARS.keys()))
-        valid_nsegs = SEGNAME_TO_PARS[segname]
-
         nsegs = int(X.size/seg.size())
-        assert nsegs in valid_nsegs, 'number of %s segments %d should be in %s' % (seg.name(), nsegs, str(valid_nsegs))
-
         shape = (nsegs,) + seg.shape() # (nsegs, srows, scols)
-
         X.shape = shape
         Y.shape = shape
         Z.shape = shape
-
         txt = header_crystfel()
         for n in range(nsegs):
             z_um = Z[n,:]
