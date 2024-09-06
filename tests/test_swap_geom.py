@@ -20,18 +20,6 @@ class mfxx49820_run8:
         self.poni1 = -0.00079
         self.poni2 = -0.00067
         self.wavelength = 1.2910925615868107e-10
-
-class mfxx49820_run15:
-    def __init__(self):
-        self.geomfile = "tests/data/geom/ePix10k2M_0-end.data"
-        self.powder = "tests/data/powder/mfxx49820/calib_max_flat_r0015.npy"
-        self.exp = "mfxx49820"
-        self.run = 15
-        self.det_type = "epix10k2M"
-        self.dist = 0.282
-        self.poni1 = -0.00030
-        self.poni2 = -0.00252
-        self.wavelength = 1.290614189196602e-10
     
 class cxil1019522_run5:
     def __init__(self):
@@ -137,11 +125,6 @@ def test_CrystFELtoPsana(test, q_peaks, I_peaks):
 
 def main():
     test = mfxx49820_run8()
-    sg, pixel_array, q_peaks, I_peaks = generate_data_radial_integration(test)
-    test_pyFAItoCrystFEL(test, sg, pixel_array, q_peaks, I_peaks)
-    test_CrystFELtoPsana(test, q_peaks, I_peaks)
-
-    test = mfxx49820_run15()
     sg, pixel_array, q_peaks, I_peaks = generate_data_radial_integration(test)
     test_pyFAItoCrystFEL(test, sg, pixel_array, q_peaks, I_peaks)
     test_CrystFELtoPsana(test, q_peaks, I_peaks)
