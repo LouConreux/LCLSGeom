@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from src.swap_geom import PsanatoCrystFEL, CrystFELtoPyFAI, PyFAItoCrystFEL, CrystFELtoPsana
+from src.LCLSGeom.swap_geom import PsanatoCrystFEL, CrystFELtoPyFAI, PyFAItoCrystFEL, CrystFELtoPsana
 from pyFAI.geometry import Geometry
 from pyFAI.azimuthalIntegrator import AzimuthalIntegrator
 from pyFAI.calibrant import CalibrantFactory, CALIBRANT_FACTORY
