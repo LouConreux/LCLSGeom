@@ -1,6 +1,6 @@
 import numpy as np
 from pyFAI.detectors import Detector
-from PSCalib.UtilsConvert import geometry_to_crystfel, header_crystfel, panel_constants_to_crystfel
+from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.UtilsConvertCrystFEL import convert_crystfel_to_geometry
 from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
 from PSCalib.GeometryAccess import GeometryAccess
