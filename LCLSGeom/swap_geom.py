@@ -155,7 +155,7 @@ class PsanatoCrystFEL:
         self.geometry_to_crystfel(psana_file, output_file, cframe, zcorr_um)
 
     def geometry_to_crystfel(self, psana_file, output_file, cframe=gu.CFRAME_PSANA, zcorr_um=None):
-        geo = GeometryAccess(psana_file, 0, use_wide_pix_center=True)
+        geo = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
         x, y, z = geo.get_pixel_coords(oname=None, oindex=0, do_tilt=True, cframe=cframe)
         geo1 = geo.get_seg_geo() # GeometryObject
         seg = geo1.algo # object of the SegmentGeometry subclass
@@ -376,7 +376,7 @@ class CrystFELtoPyFAI:
             else:
                 pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
         else:
-            geom = GeometryAccess(psana_file, 0, use_wide_pix_center=True)
+            geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
             top = geom.get_top_geo()
             child = top.get_list_of_children()[0]
             x, y, z = geom.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=gu.CFRAME_PSANA)
@@ -610,7 +610,7 @@ class PyFAItoCrystFEL:
             Correction to the Z coordinates in micrometers
         """
         X, Y, Z = self.X, self.Y, self.Z
-        geom = GeometryAccess(psana_file, 0, use_wide_pix_center=True)
+        geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
         geom1 = geom.get_seg_geo() # GeometryObject
         seg = geom1.algo # object of the SegmentGeometry subclass
         nsegs = int(X.size/seg.size())
@@ -822,7 +822,7 @@ class CrystFELtoPsana:
 
     def crystfel_to_geometry(self, pars):
         segname, panasics = pars
-        sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=True)
+        sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
 
         X,Y,Z = sg.pixel_coord_array()
 
