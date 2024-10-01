@@ -371,7 +371,10 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x
                     pix_arr[p, ss_portion, fs_portion, 1] = y
                     pix_arr[p, ss_portion, fs_portion, 2] = z
-            pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
+            if len(np.unique(pix_arr[:, :, :, 2]))==1:
+                pix_arr[:, :, :, 2] -= 0
+            else:
+                pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
         else:
             geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
             top = geom.get_top_geo()
