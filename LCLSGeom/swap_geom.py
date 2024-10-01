@@ -11,11 +11,11 @@ from PSCalib.SegGeometryStore import sgs
 import PSCalib.GlobalUtils as gu
 
 DETTYPE_TO_PARS = {
-    'epix10k2M': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
+    'epix10k2m': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
                             'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0'),
-    'epix10kaQuad': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0'),
-    'jungfrau1M': ('JUNGFRAU:V2','p0a0,p1a0'),
-    'jungfrau4M': ('JUNGFRAU:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0'),
+    'epix10kaquad': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0'),
+    'jungfrau1m': ('JUNGFRAU:V2','p0a0,p1a0'),
+    'jungfrau4m': ('JUNGFRAU:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0'),
     'rayonix': ('MTRX:V2:1920:1920:89:89','p0a0'),
     'cspad'   : ('SENS2X1:V1', 'p0a0,p0a2,p0a4,p0a6,p0a8,p0a10,p0a12,p0a14,'\
                             'p1a0,p1a2,p1a4,p1a6,p1a8,p1a10,p1a12,p1a14,'\
