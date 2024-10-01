@@ -324,7 +324,7 @@ class CrystFELtoPyFAI:
                         panel["coffset"] = float(value)
             return detector
 
-    def get_pixel_coordinates(self, panels: dict, geom_file):
+    def get_pixel_coordinates(self, panels: dict, psana_file):
         """
         From either a CrystFEL .geom file or a psana .data file, return the pixel positions
 
@@ -341,7 +341,7 @@ class CrystFELtoPyFAI:
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
         pix_arr = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 3])
-        if geom_file.split(".")[-1] == 'geom':
+        if psana_file is None:
             for p in range(nmods):
                 pname = f"p{p}"
                 for asic in range(nasics):
@@ -372,8 +372,8 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 1] = y
                     pix_arr[p, ss_portion, fs_portion, 2] = z
             pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
-        elif geom_file.split(".")[-1] == 'data':
-            geom = GeometryAccess(geom_file, 0, use_wide_pix_center=False)
+        else:
+            geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
             top = geom.get_top_geo()
             child = top.get_list_of_children()[0]
             x, y, z = geom.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=gu.CFRAME_PSANA)
