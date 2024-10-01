@@ -688,8 +688,8 @@ class CrystFELtoPsana:
 
     @staticmethod
     def tilt_xy(uf, us, i, k):
-        tilt_f, imaxf = CrystFELtoPyFAI.unit_vector_pitch_angle_max_ind(uf)
-        tilt_s, imaxs = CrystFELtoPyFAI.unit_vector_pitch_angle_max_ind(us)
+        tilt_f, imaxf = CrystFELtoPsana.unit_vector_pitch_angle_max_ind(uf)
+        tilt_s, imaxs = CrystFELtoPsana.unit_vector_pitch_angle_max_ind(us)
         tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf==0 else (tilt_f, tilt_s)
         return tilt_x, -tilt_y
 
