@@ -1,9 +1,32 @@
+import os
+import sys
 import numpy as np
+from math import atan2, degrees, sqrt
 from pyFAI.detectors import Detector
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.UtilsConvertCrystFEL import convert_crystfel_to_geometry
 from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
 from PSCalib.GeometryAccess import GeometryAccess
+from PSCalib.SegGeometryStore import sgs
+import PSCalib.GlobalUtils as gu
+
+DETTYPE_TO_PARS = {
+    'epix10k2M': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
+                            'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0'),
+    'epix10kaQuad': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0'),
+    'jungfrau1M': ('JUNGFRAU:V2','p0a0,p1a0'),
+    'jungfrau4M': ('JUNGFRAU:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0'),
+    'rayonix': ('MTRX:V2:1920:1920:89:89','p0a0'),
+    'cspad'   : ('SENS2X1:V1', 'p0a0,p0a2,p0a4,p0a6,p0a8,p0a10,p0a12,p0a14,'\
+                            'p1a0,p1a2,p1a4,p1a6,p1a8,p1a10,p1a12,p1a14,'\
+                            'p2a0,p2a2,p2a4,p2a6,p2a8,p2a10,p2a12,p2a14,'\
+                            'p3a0,p3a2,p3a4,p3a6,p3a8,p3a10,p3a12,p3a14'),\
+    'cspadv2' : ('SENS2X1:V1', 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
+                            'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0,'\
+                            'p16a0,p17a0,p18a0,p19a0,p20a0,p21a0,p22a0,p23a0,'\
+                            'p24a0,p25a0,p26a0,p27a0,p28a0,p29a0,p30a0,p31a0'),\
+    'pnccd'   : ('MTRX:V2:512:512:75:75', 'p0a0,p1a0,p2a0,p3a0'),\
+}
 
 class ePix10k2M(Detector):
     """
@@ -303,17 +326,16 @@ class CrystFELtoPyFAI:
                         panel["coffset"] = float(value)
             return detector
 
-    def get_pixel_coordinates(self, panels: dict, psana_file=None):
+    def get_pixel_coordinates(self, panels: dict, geom_file):
         """
-        From a parsed CrystFEL geometry file, calculate Epix10k2M pixel coordinates
-        in psana reference frame
+        From either a CrystFEL .geom file or a psana .data file, return the pixel positions
 
         Parameters
         ----------
         panels : dict
             Dictionary of panels from a CrystFEL geometry file
-        psana_file : str
-            Path to the psana geometry file
+        geom_file : str
+            Path to the geometry file
         """
         nmods = self.detector.n_modules
         nasics = self.detector.n_asics
@@ -321,8 +343,7 @@ class CrystFELtoPyFAI:
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
         pix_arr = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 3])
-        if psana_file is None:
-            mean_z = np.mean([panels["panels"][f"p{p}a{a}"]["coffset"] for p in range(nmods) for a in range(nasics)])
+        if geom_file.endswith('.geom'):
             for p in range(nmods):
                 pname = f"p{p}"
                 for asic in range(nasics):
@@ -339,7 +360,7 @@ class CrystFELtoPyFAI:
                     res = panels["panels"][full_name]["res"]
                     corner_x = panels["panels"][full_name]["corner_x"] / res
                     corner_y = panels["panels"][full_name]["corner_y"] / res
-                    corner_z = panels["panels"][full_name]["coffset"]-mean_z
+                    corner_z = panels["panels"][full_name]["coffset"]
                     # Get tile vectors for ss and fs directions
                     ssx, ssy, ssz = np.array(panels["panels"][full_name]["ss"]) / res
                     fsx, fsy, fsz = np.array(panels["panels"][full_name]["fs"]) / res
@@ -352,8 +373,9 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x
                     pix_arr[p, ss_portion, fs_portion, 1] = y
                     pix_arr[p, ss_portion, fs_portion, 2] = z
-        else:
-            geom = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
+            pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
+        elif geom_file.endswith('.data'):
+            geom = GeometryAccess(geom_file, 0, use_wide_pix_center=False)
             top = geom.get_top_geo()
             child = top.get_list_of_children()[0]
             x, y, z = geom.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=CFRAME_PSANA)
@@ -608,14 +630,244 @@ class PyFAItoCrystFEL:
 
 class CrystFELtoPsana:
     """
-    Write a psana .data file from a CrystFEL .geom file and a detector
+    Class to convert CrystFEL .geom geometry files to psana .data geometry files thanks to det_type information
     """
     def __init__(self, geom_file, det_type, output_file):
-        args = Args(geom_file=geom_file, det_type=det_type, output_file=output_file)
-        convert_crystfel_to_geometry(args)
+        self.geom_file = geom_file
+        self.det_type = det_type
+        self.output_file = output_file
+        self.valid = False
+        self.load_crystfel_file()
+        self.convert_crystfel_to_geometry()
 
-class Args:
-    def __init__(self, geom_file, det_type, output_file):
-        self.fname = geom_file
-        self.dettype = det_type
-        self.ofname = output_file
+    @staticmethod
+    def str_to_int_or_float(s):
+        v = float(s)
+        if v%1 == 0: v=int(v)
+        return v
+
+    @staticmethod
+    def sfields_to_xyz_vector(flds):
+        """ 
+        converts ['+0.002583x', '-0.999997y', '+0.000000z'] to (0.002583, -0.999997, 0.000000)
+        """
+        v = (float(flds[0].strip('x')), float(flds[1].strip('y')))
+        z = float(flds[2].strip('z')) if len(flds)==3 else 0
+        v += (z,)
+        return v
+
+    @staticmethod
+    def angle_and_tilt(a):
+        """
+        for angle in range [-180,180] returns nearest design angle and tilt.
+        output angle range is shifted to positive [0,360]
+        """
+        desangles = np.array((-180,-90, 0, 90, 180))
+        difangles = a-desangles
+        absdifang = np.absolute(difangles)
+        imin = np.where(absdifang == np.amin(absdifang))[0]
+        angle, tilt = desangles[imin], difangles[imin]
+        return (angle if angle>=0 else angle+360), tilt
+
+    @staticmethod
+    def unit_vector_pitch_angle_max_ind(u):
+        """
+        unit vector pitch (axis transverse direction in x-y plane) angle
+        """
+        absu = np.absolute(u)
+        imax = np.where(absu == np.amax(absu))[0]
+        pitch = degrees(atan2(u[2],u[imax]))
+        pitch = (pitch+180) if pitch<-90 else (pitch-180) if pitch>90 else pitch
+        return pitch, imax
+
+    @staticmethod
+    def vector_lab_to_psana(v):
+        """
+        both-way conversion of vectors between LAB and PSANA coordinate frames
+        """
+        assert len(v)==3
+        return np.array((-v[1], -v[0], -v[2]))
+
+    @staticmethod
+    def tilt_xy(uf, us, i, k):
+        tilt_f, imaxf = CrystFELtoPyFAI.unit_vector_pitch_angle_max_ind(uf)
+        tilt_s, imaxs = CrystFELtoPyFAI.unit_vector_pitch_angle_max_ind(us)
+        tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf==0 else (tilt_f, tilt_s)
+        return tilt_x, -tilt_y
+
+    @staticmethod
+    def str_is_segment_and_asic(s):
+        """ 
+        check if s looks like str 'q0a2' or 'p12a7'
+        returns 'p0.2' or 'p12.7' or False
+        """
+        if not isinstance(s, str)\
+        or len(s)<2: return False
+        flds = s[1:].split('a')
+        return False if len(flds) !=2 else\
+            'p%sa%s' % (flds[0], flds[1]) if all([f.isdigit() for f in flds]) else\
+            False
+
+    @staticmethod
+    def header_psana(list_of_cmts=[], dettype='N/A'):
+        comments = '\n'.join(['# CFELCMT:%02d %s'%(i,s) for i,s in enumerate(list_of_cmts)])
+        return\
+        '\n# TITLE      Geometry constants converted from CrystFEL by genuine psana'\
+        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# AUTHOR     %s' % gu.get_login()\
+        +'\n# CWD        %s' % gu.get_cwd()\
+        +'\n# HOST       %s' % gu.get_hostname()\
+        +'\n# COMMAND    %s' % ' '.join(sys.argv)\
+        +'\n# RELEASE    %s' % gu.get_enviroment('CONDA_DEFAULT_ENV')\
+        +'\n# CALIB_TYPE geometry'\
+        +'\n# DETTYPE    %s' % dettype\
+        +'\n# DETECTOR   N/A'\
+        '\n# METROLOGY  N/A'\
+        '\n# EXPERIMENT N/A'\
+        +'\n%s' % comments\
+        +'\n#'\
+        '\n# HDR PARENT IND        OBJECT IND     X0[um]   Y0[um]   Z0[um]   ROT-Z ROT-Y ROT-X     TILT-Z   TILT-Y   TILT-X'
+
+
+    def _parse_line_as_parameter(self, line):
+        assert isinstance(line, str), 'line is not a str object'
+
+        fields = line.split()
+        nfields = len(fields)
+
+        if fields[1] != '=':
+            self.list_of_ignored_records.append(line)
+            return
+
+        keys = fields[0].split('/') # ex: p15a3/corner_y
+
+        nkeys = len(keys)
+        if nkeys==1:
+            if nfields>3:
+                self.list_of_ignored_records.append(line)
+                return
+            k0 = keys[0]
+            self.dict_of_pars[k0] = float(fields[2]) if k0 in ('res', 'adu_per_eV', 'coffset') else\
+                ' '.join(fields[2:])
+
+        elif nkeys==2:
+            k0, k1 = keys
+            resp = CrystFELtoPsana.str_is_segment_and_asic(k0)
+            if resp: k0=resp
+            v = '' if nfields<3 else\
+                CrystFELtoPsana.sfields_to_xyz_vector(fields[2:]) if k1 in ('fs','ss') else\
+                int(fields[2]) if k1 in ('max_ss', 'min_ss', 'max_fs', 'min_fs', 'no_index') else\
+                int(fields[2]) if k1 in ('max_x', 'min_x', 'max_y', 'min_y') else\
+                float(fields[2]) if k1 in ('res', 'corner_x', 'corner_y', 'adu_per_eV', 'coffset') else\
+                float(fields[2]) if k1 in ('xfs', 'yfs', 'xss', 'yss') else\
+                ' '.join(fields[2:]) # str_to_int_or_float(fields[2])
+            if k0 in self.dict_of_pars.keys():
+                self.dict_of_pars[k0][k1] = v
+            else:
+                self.dict_of_pars[k0] = {k1:v,}
+
+        else:
+            self.list_of_ignored_records.append(line)
+            return
+
+
+    def str_list_of_comments(self):
+        return 'List of comments\n'\
+            + '\n'.join(self.list_of_comments)
+
+
+    def str_list_of_ignored_records(self):
+        return 'List of ignored records\n'\
+            + '\n'.join(self.list_of_ignored_records)
+
+
+    def str_dict_of_pars(self):
+        keys = sorted(self.dict_of_pars.keys())
+        msg = 'dict of parameters with top keys: %s' % ' '.join(keys)
+        for k in keys:
+            v = self.dict_of_pars[k]
+            if isinstance(v,dict):
+                msg += '\n%s: %s' % (k, CrystFELtoPsana.str_is_segment_and_asic(k))
+                for k2,v2 in v.items(): msg += '\n    %s: %s' % (k2,v2)
+            else: msg += '\n%s: %s' % (k,v)
+        return msg
+
+    def load_crystfel_file(self, fname=None):
+
+        if fname is not None: self.geom_file = fname
+        assert os.path.exists(self.geom_file), 'geometry file "%s" does not exist' % self.geom_file
+
+        self.valid = False
+
+        self.list_of_comments = []
+        self.list_of_ignored_records = []
+        self.dict_of_pars = {}
+
+        f=open(self.geom_file,'r')
+        for linef in f:
+            line = linef.strip('\n')
+
+            if not line.strip(): continue # discard empty strings
+            if line[0] == ';':            # accumulate list of comments
+                self.list_of_comments.append(line)
+                continue
+
+            self._parse_line_as_parameter(line)
+
+        f.close()
+
+        self.valid = True
+
+
+    def crystfel_to_geometry(self, pars):
+        segname, panasics = pars
+        sg = sgs.Create(segname=segname, pbits=0)
+
+        X,Y,Z = sg.pixel_coord_array()
+
+
+        PIX_SIZE_UM = sg.get_pix_size_um()
+        M_TO_UM = 1e6
+        xc0, yc0, zc0 = X[0,0], Y[0,0], Z[0,0]
+        rc0 = sqrt(xc0*xc0+yc0*yc0+zc0*zc0)
+
+        zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
+
+        recs = CrystFELtoPsana.header_psana(list_of_cmts=self.list_of_comments, dettype=self.det_type)
+
+        segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panasics.split(',')])
+        meanroundz = round(segz.mean()*1e3)*1e-3 # round z to 1mm
+        zoffset_m += meanroundz
+
+        for i,k in enumerate(panasics.split(',')):
+            dicasic = self.dict_of_pars[k]
+            uf = np.array(dicasic.get('fs', None), dtype=np.float) # unit vector f
+            us = np.array(dicasic.get('ss', None), dtype=np.float) # unit vector s
+            vf = uf*abs(xc0)
+            vs = us*abs(yc0)
+            x0pix = dicasic.get('corner_x', 0) # The units are pixel widths of the current panel
+            y0pix = dicasic.get('corner_y', 0)
+            z0m   = dicasic.get('coffset', 0)
+            adu_per_eV = dicasic.get('adu_per_eV', 1)
+
+            v00center = vf + vs
+            v00corner = np.array((x0pix*PIX_SIZE_UM, y0pix*PIX_SIZE_UM, (z0m - zoffset_m)*M_TO_UM))
+            vcent = v00corner + v00center
+
+            angle_deg = degrees(atan2(uf[1],uf[0]))
+            angle_z, tilt_z = CrystFELtoPsana.angle_and_tilt(angle_deg)
+            tilt_x, tilt_y = CrystFELtoPsana.tilt_xy(uf,us,i,k)
+
+            recs += '\nDET:VC         0  %12s  %2d' % (segname, i)\
+                + '   %8d %8d %8d %7.0f     0     0   %8.5f %8.5f %8.5f'%\
+                (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
+        recs += '\nIP             0    DET:VC       0          0        0'\
+                ' %8d       0     0     0    0.00000  0.00000  0.00000' % (zoffset_m*M_TO_UM)
+
+        f=open(self.output_file,'w')
+        f.write(recs)
+        f.close()
+
+    def convert_crystfel_to_geometry(self):
+        pars = DETTYPE_TO_PARS.get(self.det_type.lower(), None)
+        self.crystfel_to_geometry(pars)
