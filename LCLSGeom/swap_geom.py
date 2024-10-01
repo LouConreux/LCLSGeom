@@ -4,8 +4,6 @@ import numpy as np
 from math import atan2, degrees, sqrt
 from pyFAI.detectors import Detector
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
-from PSCalib.UtilsConvertCrystFEL import convert_crystfel_to_geometry
-from PSCalib.GlobalUtils import CFRAME_LAB, CFRAME_PSANA
 from PSCalib.GeometryAccess import GeometryAccess
 from PSCalib.SegGeometryStore import sgs
 import PSCalib.GlobalUtils as gu
@@ -131,8 +129,8 @@ class Rayonix(Detector):
 
     def __init__(
         self,
-        pixel1=0.000044,
-        pixel2=0.000044,
+        pixel1=0.000088,
+        pixel2=0.000088,
         n_modules=1,
         n_asics=1,
         asics_shape=(1, 1),
@@ -153,10 +151,10 @@ class PsanatoCrystFEL:
     Class to convert psana .data geometry files to CrystFEL .geom geometry files in the desired reference frame
     """
 
-    def __init__(self, psana_file, output_file, cframe=CFRAME_PSANA, zcorr_um=None):
+    def __init__(self, psana_file, output_file, cframe=gu.CFRAME_PSANA, zcorr_um=None):
         self.geometry_to_crystfel(psana_file, output_file, cframe, zcorr_um)
 
-    def geometry_to_crystfel(self, psana_file, output_file, cframe=CFRAME_PSANA, zcorr_um=None):
+    def geometry_to_crystfel(self, psana_file, output_file, cframe=gu.CFRAME_PSANA, zcorr_um=None):
         geo = GeometryAccess(psana_file, 0, use_wide_pix_center=False)
         x, y, z = geo.get_pixel_coords(oname=None, oindex=0, do_tilt=True, cframe=cframe)
         geo1 = geo.get_seg_geo() # GeometryObject
@@ -181,7 +179,7 @@ class CrystFELtoPyFAI:
     Class to convert CrystFEL .geom geometry files from a given reference frame to PyFAI corner arrays
     """
 
-    def __init__(self, geom_file, det_type, psana_file=None, cframe=CFRAME_PSANA):
+    def __init__(self, geom_file, det_type, psana_file=None, cframe=gu.CFRAME_PSANA):
         self.detector = self.get_detector(det_type)
         self.panels = self.from_CrystFEL(geom_file)
         self.pix_pos = self.get_pixel_coordinates(self.panels, psana_file)
@@ -396,7 +394,7 @@ class CrystFELtoPyFAI:
             pix_arr /= 1e6
         return pix_arr
 
-    def get_corner_array(self, pix_pos, panels, cframe=CFRAME_PSANA):
+    def get_corner_array(self, pix_pos, panels, cframe=gu.CFRAME_PSANA):
         """
         Convert to the corner array needed by PyFAI
 
