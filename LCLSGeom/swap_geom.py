@@ -574,11 +574,11 @@ class PyFAItoCrystFEL:
         rot2 = self.sg.geometry_refinement.param[4]
         rot3 = self.sg.geometry_refinement.param[5]
         Xc, Yc, Zc = self.PONI_to_center(dist, poni1, poni2, rot1, rot2, rot3)
-        X, Y, Z = self.translation(X, Y, Z, -poni1, -poni2, -dist)
+        X, Y, Z = self.translation(X, Y, Z, -poni1, -poni2, dist)
         X, Y, Z = self.rotation(Y, Z, X, -rot1)
         X, Y, Z = self.rotation(Z, X, Y, -rot2)
         X, Y, Z = self.rotation(X, Y, Z, rot3)
-        X, Y, Z = self.translation(X, Y, Z, +poni1-Xc, +poni2-Yc, +dist-Zc)
+        X, Y, Z = self.translation(X, Y, Z, +poni1-Xc, +poni2-Yc, -dist-Zc)
         X, Y, Z = self.scale_to_µm(X, Y, Z)
         self.X = X
         self.Y = Y
