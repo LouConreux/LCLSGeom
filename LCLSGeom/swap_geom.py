@@ -371,6 +371,10 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x
                     pix_arr[p, ss_portion, fs_portion, 1] = y
                     pix_arr[p, ss_portion, fs_portion, 2] = z
+            if len(np.unique(pix_arr[:, :, :, 2])) == 1:
+                pix_arr[:, :, :, 2] = 0
+            else:
+                pix_arr[:, :, :, 2] -= np.max(pix_arr[:, :, :, 2])
         else:
             geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
             top = geom.get_top_geo()
@@ -389,6 +393,7 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 1] = y[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 2] = z[p, ss_portion, fs_portion]
+            pix_arr[:, :, :, 2] -= np.max(pix_arr[:, :, :, 2])
             pix_arr /= 1e6
         return pix_arr
 
@@ -569,10 +574,11 @@ class PyFAItoCrystFEL:
         rot2 = self.sg.geometry_refinement.param[4]
         rot3 = self.sg.geometry_refinement.param[5]
         Xc, Yc, Zc = self.PONI_to_center(dist, poni1, poni2, rot1, rot2, rot3)
+        X, Y, Z = self.translation(X, Y, Z, -poni1, -poni2, -dist)
         X, Y, Z = self.rotation(Y, Z, X, -rot1)
         X, Y, Z = self.rotation(Z, X, Y, -rot2)
         X, Y, Z = self.rotation(X, Y, Z, rot3)
-        X, Y, Z = self.translation(X, Y, Z, -Xc, -Yc, -Zc)
+        X, Y, Z = self.translation(X, Y, Z, +poni1-Xc, +poni2-Yc, +dist-Zc)
         X, Y, Z = self.scale_to_µm(X, Y, Z)
         self.X = X
         self.Y = Y
