@@ -584,7 +584,10 @@ class PyFAItoCrystFEL:
         rot3 = self.sg.geometry_refinement.param[5]
         p1 = (p1 - poni1).ravel()
         p2 = (p2 - poni2).ravel()
-        p3 = (p3+dist).ravel()
+        if p3 is None:
+            p3 = np.zeros_like(p1) + dist
+        else:
+            p3 = (p3+dist).ravel()
         coord_det = np.vstack((p1, p2, p3))
         coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         t1, t2, t3 = coord_sample
