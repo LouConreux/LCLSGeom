@@ -574,6 +574,7 @@ class PyFAItoCrystFEL:
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
         """
+        params = self.sg.geometry_refinement.param
         p1, p2, p3 = self.detector.calc_cartesian_positions()
         dist = self.sg.geometry_refinement.param[0]
         poni1 = self.sg.geometry_refinement.param[1]
@@ -585,7 +586,7 @@ class PyFAItoCrystFEL:
         p2 = (p2 - poni2).ravel()
         p3 = (p3+dist).ravel()
         coord_det = np.vstack((p1, p2, p3))
-        coord_sample = np.dot(self.rotation_matrix, coord_det)
+        coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         t1, t2, t3 = coord_sample
         X = np.reshape(t1, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Y = np.reshape(t2, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
