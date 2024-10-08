@@ -516,7 +516,7 @@ class PyFAItoCrystFEL:
         Z += dz
         return X, Y, Z
     
-    def PONI_to_center(self, dist=0.1, poni1=0, poni2=0, rot1=0, rot2=0, rot3=0):
+    def PONI_to_center(self, dist=0, poni1=0, poni2=0, rot1=0, rot2=0, rot3=0):
         """
         Relate the Point of Normal Incidence (PONI) poni1, poni2, dist to the center of the beam Xc, Yc, Zc
 
@@ -555,34 +555,18 @@ class PyFAItoCrystFEL:
         """
         return x*1e6, y*1e6, z*1e6
     
-    def correct_geom(self, dist=0, poni1=0, poni2=0, rot1=0, rot2=0, rot3=0):
+    def correct_geom(self):
         """
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
-
-        Parameters
-        ----------
-        dist : float
-            Distance in meters
-        poni1 : float
-            PONI coordinate in the fast scan dimension in meters
-        poni2 : float
-            PONI coordinate in the slow scan dimension in meters
-        rot1 : float
-            Rotation angle around the fast scan axis in radians
-        rot2 : float
-            Rotation angle around the slow scan axis in radians
-        rot3 : float
-            Rotation angle around the beam axis in radians
         """
         X, Y, Z = self.X, self.Y, self.Z
-        if dist==0:
-            dist = self.sg.geometry_refinement.param[0]
-            poni1 = self.sg.geometry_refinement.param[1]
-            poni2 = self.sg.geometry_refinement.param[2]
-            rot1 = self.sg.geometry_refinement.param[3]
-            rot2 = self.sg.geometry_refinement.param[4]
-            rot3 = self.sg.geometry_refinement.param[5]
+        dist = self.sg.geometry_refinement.param[0]
+        poni1 = self.sg.geometry_refinement.param[1]
+        poni2 = self.sg.geometry_refinement.param[2]
+        rot1 = self.sg.geometry_refinement.param[3]
+        rot2 = self.sg.geometry_refinement.param[4]
+        rot3 = self.sg.geometry_refinement.param[5]
         Xc, Yc, Zc = self.PONI_to_center(dist, poni1, poni2, rot1, rot2, rot3)
         X, Y, Z = self.rotation(Y, Z, X, -rot1)
         X, Y, Z = self.rotation(Z, X, Y, -rot2)
