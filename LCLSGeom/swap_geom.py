@@ -470,32 +470,40 @@ class PyFAItoCrystFEL:
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
-    def __init__(self, sg, pixel_array, psana_file, output_file):
+    def __init__(self, sg, psana_file, output_file):
         self.sg = sg
-        self.pixel_array = pixel_array
         self.detector = sg.detector
-        self.X, self.Y, self.Z = pixel_array[:, :, :, 0], pixel_array[:, :, :, 1], pixel_array[:, :, :, 2]
         self.correct_geom()
         self.geometry_to_crystfel(psana_file, output_file)
 
-    def rotation(self, X, Y, Z, angle):
+    def rotation_matrix(self, param=None):
         """
-        Return the X, Y, Z coordinates rotated by angle
+        Compute and return the detector tilts as a single rotation matrix   
+        """
+        if param is None:
+            param = self.param
+        cos_rot1 = np.cos(param[3])
+        cos_rot2 = np.cos(param[4])
+        cos_rot3 = np.cos(param[5])
+        sin_rot1 = np.sin(param[3])
+        sin_rot2 = np.sin(param[4])
+        sin_rot3 = np.sin(param[5])
 
-        Parameters
-        ----------
-        X : np.ndarray
-            X coordinates
-        Y : np.ndarray
-            Y coordinates
-        Z : np.ndarray
-            Z coordinates
-        angle : float 
-            rotation angle in radians
-        """
-        Xr = X * np.cos(angle) - Y * np.sin(angle)
-        Yr = X * np.sin(angle) + Y * np.cos(angle)
-        return Xr, Yr, Z
+        # Rotation about axis 1: Note this rotation is left-handed
+        rot1 = np.array([[1.0, 0.0, 0.0],
+                            [0.0, cos_rot1, sin_rot1],
+                            [0.0, -sin_rot1, cos_rot1]])
+        # Rotation about axis 2. Note this rotation is left-handed
+        rot2 = np.array([[cos_rot2, 0.0, -sin_rot2],
+                            [0.0, 1.0, 0.0],
+                            [sin_rot2, 0.0, cos_rot2]])
+        # Rotation about axis 3: Note this rotation is right-handed
+        rot3 = np.array([[cos_rot3, -sin_rot3, 0.0],
+                            [sin_rot3, cos_rot3, 0.0],
+                            [0.0, 0.0, 1.0]])
+        rotation_matrix = np.dot(np.dot(rot3, rot2),
+                                    rot1)  # 3x3 matrix
+        return rotation_matrix
     
     def translation(self, X, Y, Z, dx, dy, dz):
         """
@@ -566,18 +574,24 @@ class PyFAItoCrystFEL:
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
         """
-        X, Y, Z = self.X, self.Y, self.Z
+        p1, p2, p3 = self.detector.calc_cartesian_positions()
         dist = self.sg.geometry_refinement.param[0]
         poni1 = self.sg.geometry_refinement.param[1]
         poni2 = self.sg.geometry_refinement.param[2]
         rot1 = self.sg.geometry_refinement.param[3]
         rot2 = self.sg.geometry_refinement.param[4]
         rot3 = self.sg.geometry_refinement.param[5]
+        p1 = (p1 - poni1).ravel()
+        p2 = (p2 - poni2).ravel()
+        p3 = (p3+dist).ravel()
+        coord_det = np.vstack((p1, p2, p3))
+        coord_sample = np.dot(self.rotation_matrix, coord_det)
+        t1, t2, t3 = coord_sample
+        X = np.reshape(t1, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
+        Y = np.reshape(t2, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
+        Z = np.reshape(t3, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Xc, Yc, Zc = self.PONI_to_center(dist, poni1, poni2, rot1, rot2, rot3)
-        Y, Z, X = self.rotation(Y, Z, X, -rot1)
-        Z, X, Y = self.rotation(Z, X, Y, -rot2)
-        X, Y, Z = self.rotation(X, Y, Z, rot3)
-        X, Y, Z = self.translation(X, Y, Z, -Xc, -Yc, -Zc)
+        X, Y, Z = self.translation(X, Y, Z, poni1-Xc, poni2-Yc, -dist-Zc)
         X, Y, Z = self.scale_to_µm(X, Y, Z)
         self.X = X
         self.Y = Y
