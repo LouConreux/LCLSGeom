@@ -538,6 +538,7 @@ class PyFAItoCrystFEL:
         Xc = poni1+dist*(np.tan(rot2)/np.cos(rot1))
         Yc = poni2-dist*(np.tan(rot1))
         Zc = dist/(np.cos(rot1)*np.cos(rot2))
+        print(f"Xc: {Xc}, Yc: {Yc}, Zc: {Zc}")
         return Xc, Yc, Zc
     
     def scale_to_µm(self, x, y, z):
