@@ -591,8 +591,6 @@ class PyFAItoCrystFEL:
         X = np.reshape(t1, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Y = np.reshape(t2, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Z = np.reshape(t3, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        Xc, Yc, Zc = self.PONI_to_center(dist, poni1, poni2, rot1, rot2, rot3)
-        X, Y, Z = self.translation(X, Y, Z, poni1-Xc, poni2-Yc, -dist-Zc)
         X, Y, Z = self.scale_to_µm(X, Y, Z)
         self.X = X
         self.Y = Y
