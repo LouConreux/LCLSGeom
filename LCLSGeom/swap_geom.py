@@ -505,30 +505,6 @@ class PyFAItoCrystFEL:
                                     rot1)  # 3x3 matrix
         return rotation_matrix
     
-    def translation(self, X, Y, Z, dx, dy, dz):
-        """
-        Return the X, Y, Z coordinates translated by dx, dy, dz
-
-        Parameters
-        ----------
-        X : np.ndarray
-            X coordinates
-        Y : np.ndarray
-            Y coordinates
-        Z : np.ndarray
-            Z coordinates
-        dx : float
-            Translation in X in meters
-        dy : float
-            Translation in Y in meters
-        dz : float
-            Translation in Z in meters
-        """
-        X += dx
-        Y += dy
-        Z += dz
-        return X, Y, Z
-    
     def PONI_to_center(self, dist=0, poni1=0, poni2=0, rot1=0, rot2=0, rot3=0):
         """
         Relate the Point of Normal Incidence (PONI) poni1, poni2, dist to the center of the beam Xc, Yc, Zc
@@ -568,39 +544,23 @@ class PyFAItoCrystFEL:
             z coordinate in meters
         """
         return x*1e6, y*1e6, z*1e6
-    
-    def get_pixel_coordinates(self, corners=False):
-        """
-        Extract pixel coordinates in detector frame
 
-        Parameters
-        ----------
-        corners : bool
-            If True, return the corner coordinates
-            If False, return the center coordinates
-        """
-        if corners:
-            tmp = self.detector.get_pixel_corners(correct_binning=True)
-            p1 = tmp[..., 1]
-            p2 = tmp[..., 2]
-            p3 = tmp[..., 0]
-        else:
-            p1, p2, p3 = self.detector.calc_cartesian_positions()
-        return p1, p2, p3
-
-    def correct_geom(self, corners=False):
+    def correct_geom(self, center=False):
         """
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
+
+        Parameters
+        ----------
+        center : bool
+            If True, return pixel center coordinates on detector frame
+            If False, return pixel corner coordinates on detector frame
         """
         params = self.sg.geometry_refinement.param
-        p1, p2, p3 = self.get_pixel_coordinates(corners)
+        p1, p2, p3 = self.detector.calc_cartesian_positions(center=center)
         dist = self.sg.geometry_refinement.param[0]
         poni1 = self.sg.geometry_refinement.param[1]
         poni2 = self.sg.geometry_refinement.param[2]
-        rot1 = self.sg.geometry_refinement.param[3]
-        rot2 = self.sg.geometry_refinement.param[4]
-        rot3 = self.sg.geometry_refinement.param[5]
         p1 = (p1 - poni1).ravel()
         p2 = (p2 - poni2).ravel()
         if p3 is None:
