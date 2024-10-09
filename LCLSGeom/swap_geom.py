@@ -470,10 +470,10 @@ class PyFAItoCrystFEL:
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
-    def __init__(self, sg, psana_file, output_file, corners=False):
+    def __init__(self, sg, psana_file, output_file, center=False):
         self.sg = sg
         self.detector = sg.detector
-        self.correct_geom(corners)
+        self.correct_geom(center)
         self.geometry_to_crystfel(psana_file, output_file)
 
     def rotation_matrix(self, param=None):
