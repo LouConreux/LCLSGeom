@@ -470,10 +470,10 @@ class PyFAItoCrystFEL:
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
-    def __init__(self, sg, psana_file, output_file):
+    def __init__(self, sg, psana_file, output_file, corners=False):
         self.sg = sg
         self.detector = sg.detector
-        self.correct_geom()
+        self.correct_geom(corners)
         self.geometry_to_crystfel(psana_file, output_file)
 
     def rotation_matrix(self, param=None):
@@ -569,13 +569,32 @@ class PyFAItoCrystFEL:
         """
         return x*1e6, y*1e6, z*1e6
     
-    def correct_geom(self):
+    def get_pixel_coordinates(self, corners=False):
+        """
+        Extract pixel coordinates in detector frame
+
+        Parameters
+        ----------
+        corners : bool
+            If True, return the corner coordinates
+            If False, return the center coordinates
+        """
+        if corners:
+            tmp = self.detector.get_pixel_corners(correct_binning=True)
+            p1 = tmp[..., 1]
+            p2 = tmp[..., 2]
+            p3 = tmp[..., 0]
+        else:
+            p1, p2, p3 = self.detector.calc_cartesian_positions()
+        return p1, p2, p3
+
+    def correct_geom(self, corners=False):
         """
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
         """
         params = self.sg.geometry_refinement.param
-        p1, p2, p3 = self.detector.calc_cartesian_positions()
+        p1, p2, p3 = self.get_pixel_coordinates(corners)
         dist = self.sg.geometry_refinement.param[0]
         poni1 = self.sg.geometry_refinement.param[1]
         poni2 = self.sg.geometry_refinement.param[2]
