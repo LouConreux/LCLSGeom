@@ -505,31 +505,6 @@ class PyFAItoCrystFEL:
                                     rot1)  # 3x3 matrix
         return rotation_matrix
     
-    def PONI_to_center(self, dist=0, poni1=0, poni2=0, rot1=0, rot2=0, rot3=0):
-        """
-        Relate the Point of Normal Incidence (PONI) poni1, poni2, dist to the center of the beam Xc, Yc, Zc
-
-        Parameters
-        ----------
-        dist : float
-            Distance in meters
-        poni1 : float
-            PONI coordinate in the fast scan dimension in meters
-        poni2 : float
-            PONI coordinate in the slow scan dimension in meters
-        rot1 : float
-            Rotation angle around the fast scan axis in radians
-        rot2 : float
-            Rotation angle around the slow scan axis in radians
-        rot3 : float
-            Rotation angle around the beam axis in radians
-        """
-        Xc = poni1+dist*(np.tan(rot2)/np.cos(rot1))
-        Yc = poni2-dist*(np.tan(rot1))
-        Zc = dist/(np.cos(rot1)*np.cos(rot2))
-        print(f"Xc: {Xc}, Yc: {Yc}, Zc: {Zc}")
-        return Xc, Yc, Zc
-    
     def scale_to_µm(self, x, y, z):
         """
         Scale from meter m to micrometer µm
