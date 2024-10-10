@@ -374,7 +374,7 @@ class CrystFELtoPyFAI:
             if len(np.unique(pix_arr[:, :, :, 2])) == 1:
                 pix_arr[:, :, :, 2] = 0
             else:
-                pix_arr[:, :, :, 2] -= np.max(pix_arr[:, :, :, 2])
+                pix_arr[:, :, :, 2] -= np.min(pix_arr[:, :, :, 2])
         else:
             geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
             top = geom.get_top_geo()
@@ -393,7 +393,7 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 1] = y[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 2] = z[p, ss_portion, fs_portion]
-            pix_arr[:, :, :, 2] -= np.max(pix_arr[:, :, :, 2])
+            pix_arr[:, :, :, 2] -= np.min(pix_arr[:, :, :, 2])
             pix_arr /= 1e6
         return pix_arr
 
@@ -541,7 +541,7 @@ class PyFAItoCrystFEL:
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
-            p3 = (p3+dist).ravel()
+            p3 = (p3-dist).ravel()
         coord_det = np.vstack((p1, p2, p3))
         coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         t1, t2, t3 = coord_sample
@@ -792,7 +792,7 @@ class CrystFELtoPsana:
         recs = CrystFELtoPsana.header_psana(list_of_cmts=self.list_of_comments, dettype=self.det_type)
 
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panasics.split(',')])
-        meanroundz = round(segz.mean()*1e3)*1e-3 # round z to 1mm
+        meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
         zoffset_m += meanroundz
 
         for i,k in enumerate(panasics.split(',')):
