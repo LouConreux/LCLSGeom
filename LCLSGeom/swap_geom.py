@@ -174,16 +174,17 @@ class PsanatoCrystFEL:
             f.write(txt)
             f.close()
 
-class CrystFELtoPyFAI:
+class GeomtoPyFAI:
     """
-    Class to convert CrystFEL .geom geometry files from a given reference frame to PyFAI corner arrays
+    Class to convert either a CrystFEL .geom geometry file or a Psana .data file
+    if provided from a given reference frame to PyFAI corner arrays
     """
 
     def __init__(self, geom_file, det_type, psana_file=None, cframe=gu.CFRAME_PSANA):
         self.detector = self.get_detector(det_type)
-        self.panels = self.from_CrystFEL(geom_file)
-        self.pix_pos = self.get_pixel_coordinates(self.panels, psana_file)
-        self.corner_array = self.get_corner_array(self.pix_pos, self.panels, cframe)
+        panels = self.from_CrystFEL(geom_file)
+        self.pix_pos = self.get_pixel_coordinates(panels, psana_file)
+        self.corner_array = self.get_corner_array(self.pix_pos, panels, cframe)
         self.detector.set_pixel_corners(self.corner_array)
 
     def get_detector(self, det_type):
@@ -324,7 +325,7 @@ class CrystFELtoPyFAI:
                         panel["coffset"] = float(value)
             return detector
 
-    def get_pixel_coordinates(self, panels: dict, psana_file):
+    def get_pixel_coordinates(self, panels: dict, psana_file=None):
         """
         From either a CrystFEL .geom file or a psana .data file, return the pixel positions
 
@@ -374,7 +375,7 @@ class CrystFELtoPyFAI:
             if len(np.unique(pix_arr[:, :, :, 2])) == 1:
                 pix_arr[:, :, :, 2] = 0
             else:
-                pix_arr[:, :, :, 2] -= np.min(pix_arr[:, :, :, 2])
+                pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
         else:
             geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
             top = geom.get_top_geo()
@@ -393,7 +394,7 @@ class CrystFELtoPyFAI:
                     pix_arr[p, ss_portion, fs_portion, 0] = x[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 1] = y[p, ss_portion, fs_portion]
                     pix_arr[p, ss_portion, fs_portion, 2] = z[p, ss_portion, fs_portion]
-            pix_arr[:, :, :, 2] -= np.min(pix_arr[:, :, :, 2])
+            pix_arr[:, :, :, 2] -= np.mean(pix_arr[:, :, :, 2])
             pix_arr /= 1e6
         return pix_arr
 
