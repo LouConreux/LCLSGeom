@@ -508,14 +508,14 @@ class PyFAItoCrystFEL:
     def correct_z_offset(self, param=None):
         """
         Correct the Z coordinates since PyFAI apply +dist on detector Z coordinates
-        Hence the need to subtract the true detector-sample distance from the final lab Z coordinates
+        Hence the need to apply -dist and substract by the true detector-sample distance from the final lab Z coordinates
         """
         if param is None:
             param = self.param
         cos_rot1 = np.cos(param[3])
         cos_rot2 = np.cos(param[4])
-        distance = param[0]/(cos_rot1*cos_rot2)
-        return distance
+        z_offset = -param[0](1 + 1/(cos_rot1*cos_rot2))
+        return z_offset
     
     def scale_to_µm(self, x, y, z):
         """
@@ -557,8 +557,8 @@ class PyFAItoCrystFEL:
         coord_det = np.vstack((p1, p2, p3))
         coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         x, y, z = coord_sample
-        distance = self.correct_z_offset(params)
-        z -= distance
+        z_offset = self.correct_z_offset(params)
+        z -= z_offset
         X = np.reshape(x, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Y = np.reshape(y, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         Z = np.reshape(z, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
