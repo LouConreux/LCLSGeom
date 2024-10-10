@@ -479,7 +479,7 @@ class PyFAItoCrystFEL:
 
     def rotation_matrix(self, param=None):
         """
-        Compute and return the detector tilts as a single rotation matrix   
+        Compute and return the detector tilts as a single rotation matrix
         """
         if param is None:
             param = self.param
@@ -505,6 +505,18 @@ class PyFAItoCrystFEL:
         rotation_matrix = np.dot(np.dot(rot3, rot2),
                                     rot1)  # 3x3 matrix
         return rotation_matrix
+    
+    def correct_z_offset(self, param=None):
+        """
+        Correct the Z coordinates since PyFAI apply +dist on detector Z coordinates
+        Hence the need to subtract the true detector-sample distance from the final lab Z coordinates
+        """
+        if param is None:
+            param = self.param
+        cos_rot1 = np.cos(param[3])
+        cos_rot2 = np.cos(param[4])
+        distance = param[0]/(cos_rot1*cos_rot2)
+        return distance
     
     def scale_to_µm(self, x, y, z):
         """
@@ -542,13 +554,15 @@ class PyFAItoCrystFEL:
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
-            p3 = (p3-dist).ravel()
+            p3 = (p3+dist).ravel()
         coord_det = np.vstack((p1, p2, p3))
         coord_sample = np.dot(self.rotation_matrix(params), coord_det)
-        t1, t2, t3 = coord_sample
-        X = np.reshape(t1, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        Y = np.reshape(t2, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        Z = np.reshape(t3, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
+        x, y, z = coord_sample
+        distance = self.correct_z_offset(params)
+        z -= distance
+        X = np.reshape(x, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
+        Y = np.reshape(y, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
+        Z = np.reshape(z, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
         X, Y, Z = self.scale_to_µm(X, Y, Z)
         self.X = X
         self.Y = Y
