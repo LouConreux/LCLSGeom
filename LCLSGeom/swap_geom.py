@@ -470,24 +470,24 @@ class PyFAItoCrystFEL:
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
     """
 
-    def __init__(self, sg, psana_file, output_file, center=False):
-        self.sg = sg
-        self.detector = sg.detector
+    def __init__(self, detector, params, psana_file, output_file, center=False):
+        self.detector = detector
+        self.params = params
         self.correct_geom(center)
         self.geometry_to_crystfel(psana_file, output_file)
 
-    def rotation_matrix(self, param=None):
+    def rotation_matrix(self, params=None):
         """
         Compute and return the detector tilts as a single rotation matrix
         """
-        if param is None:
-            param = self.param
-        cos_rot1 = np.cos(param[3])
-        cos_rot2 = np.cos(param[4])
-        cos_rot3 = np.cos(param[5])
-        sin_rot1 = np.sin(param[3])
-        sin_rot2 = np.sin(param[4])
-        sin_rot3 = np.sin(param[5])
+        if params is None:
+            params = self.params
+        cos_rot1 = np.cos(params[3])
+        cos_rot2 = np.cos(params[4])
+        cos_rot3 = np.cos(params[5])
+        sin_rot1 = np.sin(params[3])
+        sin_rot2 = np.sin(params[4])
+        sin_rot3 = np.sin(params[5])
 
         # Rotation about axis 1: Note this rotation is left-handed
         rot1 = np.array([[1.0, 0.0, 0.0],
@@ -501,20 +501,19 @@ class PyFAItoCrystFEL:
         rot3 = np.array([[cos_rot3, -sin_rot3, 0.0],
                             [sin_rot3, cos_rot3, 0.0],
                             [0.0, 0.0, 1.0]])
-        rotation_matrix = np.dot(np.dot(rot3, rot2),
-                                    rot1)  # 3x3 matrix
+        rotation_matrix = np.dot(np.dot(rot3, rot2), rot1)  # 3x3 matrix
         return rotation_matrix
     
-    def correct_z_offset(self, param=None):
+    def correct_z_offset(self, params=None):
         """
         Correct the Z coordinates since PyFAI apply +dist on detector Z coordinates
         Hence the need to apply -dist and substract by the true detector-sample distance from the final lab Z coordinates
         """
-        if param is None:
-            param = self.param
-        cos_rot1 = np.cos(param[3])
-        cos_rot2 = np.cos(param[4])
-        z_offset = -param[0](1 + 1/(cos_rot1*cos_rot2))
+        if params is None:
+            params = self.params
+        cos_rot1 = np.cos(params[3])
+        cos_rot2 = np.cos(params[4])
+        z_offset = -params[0](1 + 1/(cos_rot1*cos_rot2))
         return z_offset
     
     def scale_to_µm(self, x, y, z):
@@ -543,11 +542,11 @@ class PyFAItoCrystFEL:
             If True, return pixel center coordinates on detector frame
             If False, return pixel corner coordinates on detector frame
         """
-        params = self.sg.geometry_refinement.param
+        params = self.params
         p1, p2, p3 = self.detector.calc_cartesian_positions(center=center)
-        dist = self.sg.geometry_refinement.param[0]
-        poni1 = self.sg.geometry_refinement.param[1]
-        poni2 = self.sg.geometry_refinement.param[2]
+        dist = self.params[0]
+        poni1 = self.params[1]
+        poni2 = self.params[2]
         p1 = (p1 - poni1).ravel()
         p2 = (p2 - poni2).ravel()
         if p3 is None:
