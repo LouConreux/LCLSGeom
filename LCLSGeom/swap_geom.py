@@ -543,11 +543,6 @@ class PsanaToPyFAI:
         x, y, z = x*1e-6, y*1e-6, z*1e-6
         geo1 = geo.get_seg_geo() # GeometryObject
         seg = geo1.algo # object of the SegmentGeometry subclass
-        nsegs = int(x.size/seg.size())
-        shape = (nsegs,) + seg.shape() # (nsegs, srows, scols)
-        x.shape = shape
-        y.shape = shape
-        z.shape = shape
         nmods = self.detector.n_modules
         nasics = self.detector.n_asics
         asics_shape = self.detector.asics_shape
@@ -555,7 +550,7 @@ class PsanaToPyFAI:
         ss_size = self.detector.ss_size
         # Flattened ss dim, fs dim, 4 corners, 3 coordinates (x, y, z)
         pyfai_fmt = np.zeros([nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
-        for n in range(nsegs):
+        for n in range(nmods):
             arows, acols = seg.asic_rows_cols()
             pix_size = seg.pixel_scale_size()
             res = 1e6/pix_size
