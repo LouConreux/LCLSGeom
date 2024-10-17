@@ -627,8 +627,8 @@ class PyFAIToCrystFEL:
     def __init__(self, detector, params, psana_file, out_file, center=False):
         self.detector = detector
         self.params = params
-        self.correct_geom(center)
-        self.convert_to_geom(psana_file, out_file)
+        self.correct_geom(center=center)
+        self.convert_to_geom(psana_file=psana_file, out_file=out_file)
 
     def rotation_matrix(self, params):
         """
