@@ -590,9 +590,9 @@ class PsanaToPyFAI:
                 y = cy[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
                 z = cz[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
                 if len(np.unique(z))==1:
-                    z[:, :, :] = 0
+                    z = np.zeros_like(z)
                 else:
-                    z[:, :, :] -= np.mean(z)
+                    z -= np.mean(z)
                 if cframe==0:
                     pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = z
                     pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = x
