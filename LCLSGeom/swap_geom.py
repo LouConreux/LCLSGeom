@@ -554,18 +554,18 @@ class PsanaToPyFAI:
             arows, acols = seg.asic_rows_cols()
             pix_size = seg.pixel_scale_size()
             res = 1e6/pix_size
-            X = x[n, :]
-            Y = y[n, :]
-            Z = z[n, :]
+            xn = x[n, :]
+            yn = y[n, :]
+            zn = z[n, :]
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
-                    X[r0,c0+acols-1] - X[r0,c0],\
-                    Y[r0,c0+acols-1] - Y[r0,c0],\
-                    Z[r0,c0+acols-1] - Z[r0,c0]))
+                    xn[r0,c0+acols-1] - xn[r0,c0],\
+                    yn[r0,c0+acols-1] - yn[r0,c0],\
+                    zn[r0,c0+acols-1] - zn[r0,c0]))
                 vss = np.array((\
-                    X[r0+arows-1,c0] - X[r0,c0],\
-                    Y[r0+arows-1,c0] - Y[r0,c0],\
-                    Z[r0+arows-1,c0] - Z[r0,c0]))
+                    xn[r0+arows-1,c0] - xn[r0,c0],\
+                    yn[r0+arows-1,c0] - yn[r0,c0],\
+                    zn[r0+arows-1,c0] - zn[r0,c0]))
                 nfs = vfs/np.linalg.norm(vfs)
                 nss = vss/np.linalg.norm(vss)
                 if nasics == 1:
@@ -574,33 +574,33 @@ class PsanaToPyFAI:
                 else:
                     arow = a // (nasics//2)
                     acol = a % (nasics//2)
-                ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
                 fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
+                ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
                 slab_offset = n * asics_shape[0] * ss_size
-                ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
                 fs_portion_slab = slice(acol * fs_size, (acol + 1) * fs_size)
+                ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
                 ssx, ssy, ssz = np.array(nss) / res
                 fsx, fsy, fsz = np.array(nfs) / res
-                cx = x[n, ss_portion, fs_portion]
-                cy = y[n, ss_portion, fs_portion]
-                cz = z[n, ss_portion, fs_portion]
+                xna = x[n, ss_portion, fs_portion]
+                yna = y[n, ss_portion, fs_portion]
+                zna = z[n, ss_portion, fs_portion]
                 ss_units = np.array([0, 1, 1, 0])
                 fs_units = np.array([0, 0, 1, 1])
-                X = cx[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
-                Y = cy[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
-                Z = cz[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                if len(np.unique(Z))==1:
-                    Z = np.zeros_like(Z)
+                xnac = xna[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
+                ynac = yna[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
+                znac = zna[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
+                if len(np.unique(znac))==1:
+                    znac = np.zeros_like(znac)
                 else:
-                    Z -= np.mean(Z)
+                    znac -= np.mean(znac)
                 if cframe==0:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = Z
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = X
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = Y
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = xnac
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = ynac
                 elif cframe==1:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = Z
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = Y
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = X
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = ynac
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = xnac
         return pyfai_fmt
 
 class PyFAIToCrystFEL:
