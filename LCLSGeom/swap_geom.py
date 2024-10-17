@@ -554,15 +554,18 @@ class PsanaToPyFAI:
             arows, acols = seg.asic_rows_cols()
             pix_size = seg.pixel_scale_size()
             res = 1e6/pix_size
+            X = x[n, :]
+            Y = y[n, :]
+            Z = z[n, :]
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
-                    x[n,r0,c0+acols-1] - x[n,r0,c0],\
-                    y[n,r0,c0+acols-1] - y[n,r0,c0],\
-                    z[n,r0,c0+acols-1] - z[n,r0,c0]))
+                    X[r0,c0+acols-1] - X[r0,c0],\
+                    Y[r0,c0+acols-1] - Y[r0,c0],\
+                    Z[r0,c0+acols-1] - Z[r0,c0]))
                 vss = np.array((\
-                    x[n,r0+arows-1,c0] - x[n,r0,c0],\
-                    y[n,r0+arows-1,c0] - y[n,r0,c0],\
-                    z[n,r0+arows-1,c0] - z[n,r0,c0]))
+                    X[r0+arows-1,c0] - X[r0,c0],\
+                    Y[r0+arows-1,c0] - Y[r0,c0],\
+                    Z[r0+arows-1,c0] - Z[r0,c0]))
                 nfs = vfs/np.linalg.norm(vfs)
                 nss = vss/np.linalg.norm(vss)
                 if nasics == 1:
