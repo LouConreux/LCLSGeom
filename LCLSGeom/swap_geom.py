@@ -586,21 +586,21 @@ class PsanaToPyFAI:
                 cz = z[n, ss_portion, fs_portion]
                 ss_units = np.array([0, 1, 1, 0])
                 fs_units = np.array([0, 0, 1, 1])
-                x = cx[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
-                y = cy[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
-                z = cz[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                if len(np.unique(z))==1:
-                    z = np.zeros_like(z)
+                X = cx[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
+                Y = cy[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
+                Z = cz[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
+                if len(np.unique(Z))==1:
+                    Z = np.zeros_like(Z)
                 else:
-                    z -= np.mean(z)
+                    Z -= np.mean(Z)
                 if cframe==0:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = z
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = x
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = y
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = Z
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = X
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = Y
                 elif cframe==1:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = z
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = y
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = x
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = Z
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = Y
+                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = X
         return pyfai_fmt
 
 class PyFAIToCrystFEL:
