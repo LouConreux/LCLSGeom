@@ -187,7 +187,7 @@ class PsanaToCrystFEL:
     """
 
     def __init__(self, in_file, out_file, cframe=gu.CFRAME_PSANA):
-        self.convert_data_to_geom(inf_fil=in_file, out_file=out_file, cframe=cframe)
+        self.convert_data_to_geom(in_file=in_file, out_file=out_file, cframe=cframe)
 
     def convert_data_to_geom(self, in_file, out_file, cframe=gu.CFRAME_PSANA):
         """
