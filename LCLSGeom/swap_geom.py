@@ -1003,5 +1003,7 @@ class CrystFELToPsana:
         f.close()
 
     def convert_geom_to_data(self, det_type, out_file):
+        if "epix10kaquad" in det_type.lower():
+            det_type = "Epix10kaQuad"
         pars = DETTYPE_TO_PARS.get(det_type.lower(), None)
         self.geom_to_data(pars, det_type, out_file)
