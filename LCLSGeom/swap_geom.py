@@ -14,8 +14,6 @@ DETTYPE_TO_PARS = {
     'epix10kaquad': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0'),
     'jungfrau1m': ('JUNGFRAU:V2','p0a0,p1a0'),
     'jungfrau4m': ('JUNGFRAU:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0'),
-    'rayonix': ('MTRX:V2:3840:3840:44:44','p0a0'),
-    'rayonix2': ('MTRX:V2:1920:1920:88:88','p0a0'),
     'cspad'   : ('SENS2X1:V1', 'p0a0,p0a2,p0a4,p0a6,p0a8,p0a10,p0a12,p0a14,'\
                             'p1a0,p1a2,p1a4,p1a6,p1a8,p1a10,p1a12,p1a14,'\
                             'p2a0,p2a2,p2a4,p2a6,p2a8,p2a10,p2a12,p2a14,'\
@@ -46,6 +44,28 @@ def get_beam_center(params):
     cy = poni2 - dist * np.tan(rot1)
     return distance, cx, cy
 
+def get_detector(det_type, pixel_size=None, shape=None):
+    """
+    Instantiate a PyFAI Detector object based on the detector type
+
+    Parameters
+    ----------
+    det_type : str
+        Detector type
+    """
+    if det_type.lower() == "epix10k2m":
+        return ePix10k2M(pixel_size=pixel_size, shape=shape)
+    elif "epix10kaquad" in det_type.lower():
+        return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
+    elif det_type.lower() == "jungfrau1m":
+        return Jungfrau1M(pixel_size=pixel_size, shape=shape)
+    elif det_type.lower() == "jungfrau4m":
+        return Jungfrau4M(pixel_size=pixel_size, shape=shape)
+    elif det_type.lower() == "rayonix":
+        return Rayonix(pixel_size=pixel_size, shape=shape)
+    else:
+        raise ValueError("Detector type not recognized")
+
 class ePix10k2M(Detector):
     """
     PyFAI Detector instance for the ePix10k2M
@@ -53,22 +73,24 @@ class ePix10k2M(Detector):
 
     def __init__(
         self,
-        pixel1=0.0001,
-        pixel2=0.0001,
-        n_modules=16,
+        pixel_size=None,
+        shape=None,
         n_asics=4,
         asics_shape = (2, 2), # (rows, cols) = (ss, fs)
-        fs_size=192,
-        ss_size=176,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
-        self.n_modules = n_modules
+        if pixel_size is None:
+            pixel_size = 0.0001
+        if shape is None:
+            shape = (16, 352, 384)
+        self.shape = shape
+        self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
 class ePix10kaQuad(Detector):
     """
@@ -77,22 +99,24 @@ class ePix10kaQuad(Detector):
 
     def __init__(
         self,
-        pixel1=0.0001,
-        pixel2=0.0001,
-        n_modules=4,
+        pixel_size=None,
+        shape=None,
         n_asics=4,
-        asics_shape = (2, 2),
-        fs_size=192,
-        ss_size=176,
+        asics_shape = (2, 2), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
-        self.n_modules = n_modules
+        if pixel_size is None:
+            pixel_size = 0.0001
+        if shape is None:
+            shape = (4, 352, 384)
+        self.shape = shape
+        self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau1M(Detector):
     """
@@ -101,22 +125,24 @@ class Jungfrau1M(Detector):
 
     def __init__(
         self,
-        pixel1=0.000075,
-        pixel2=0.000075,
-        n_modules=2,
+        pixel_size=None,
+        shape=None,
         n_asics=8,
         asics_shape=(2, 4), # (rows, cols) = (ss, fs)
-        fs_size=256,
-        ss_size=256,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
-        self.n_modules = n_modules
+        if pixel_size is None:
+            pixel_size = 0.000075
+        if shape is None:
+            shape = (4, 512, 1024)
+        self.shape = shape
+        self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau4M(Detector):
     """
@@ -125,70 +151,51 @@ class Jungfrau4M(Detector):
 
     def __init__(
         self,
-        pixel1=0.000075,
-        pixel2=0.000075,
-        n_modules=8,
+        pixel_size=None,
+        shape=None,
         n_asics=8,
         asics_shape=(2, 4), # (rows, cols) = (ss, fs)
-        fs_size=256,
-        ss_size=256,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * asics_shape[0] * ss_size, asics_shape[1] * fs_size), **kwargs)
-        self.n_modules = n_modules
+        if pixel_size is None:
+            pixel_size = 0.000075
+        if shape is None:
+            shape = (8, 512, 1024)
+        self.shape = shape
+        self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
 class Rayonix(Detector):
     """
-    PyFAI Detector instance for the unbinned Rayonix
+    PyFAI Detector instance for the Rayonix
+    By default, the Rayonix detector is defined unbinned. The user can specify the pixel size and detector shape to bin the detector if wanted.
     """
 
     def __init__(
         self,
-        pixel1=0.000044,
-        pixel2=0.000044,
-        n_modules=1,
+        pixel_size=None,
+        shape=None,
         n_asics=1,
         asics_shape=(1, 1),
-        fs_size=3840,
-        ss_size=3840,
         **kwargs,
     ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * ss_size, fs_size), **kwargs)
-        self.n_modules = n_modules
+        if pixel_size is None:
+            pixel_size = 0.000176
+        if shape is None:
+            shape = (1, 1920, 1920)
+        self.shape = shape
+        self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
-
-class Rayonix2(Detector):
-    """
-    PyFAI Detector instance for the half-binned Rayonix
-    """
-
-    def __init__(
-        self,
-        pixel1=0.000088,
-        pixel2=0.000088,
-        n_modules=1,
-        n_asics=1,
-        asics_shape=(1, 1),
-        fs_size=1920,
-        ss_size=1920,
-        **kwargs,
-    ):
-        super().__init__(pixel1=pixel1, pixel2=pixel2, max_shape=(n_modules * ss_size, fs_size), **kwargs)
-        self.n_modules = n_modules
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = ss_size
-        self.fs_size = fs_size
-        self.pixel_size = pixel1
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
 class PsanaToCrystFEL:
     """
@@ -241,41 +248,21 @@ class CrystFELToPyFAI:
         Path to the CrystFEL .geom file
     det_type : str
         Detector type
+    pixel_size : float
+        Pixel size in meters
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
     cframe : int
         Frame reference to convert to PyFAI format
         0 = psana frame, 1 = lab frame
     """
 
-    def __init__(self, in_file, det_type, cframe=gu.CFRAME_PSANA):
-        self.detector = self.get_detector(det_type=det_type)
+    def __init__(self, in_file, det_type, pixel_size=None, shape=None, cframe=gu.CFRAME_PSANA):
+        self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         parser = self.parse_CrystFEL(in_file=in_file)
         pix_pos = self.get_pixel_coordinates(parser=parser)
         corner_array = self.get_corner_array(pix_pos=pix_pos, parser=parser, cframe=cframe)
         self.detector.set_pixel_corners(ary=corner_array)
-
-    def get_detector(self, det_type):
-        """
-        Instantiate a PyFAI Detector object based on the detector type
-
-        Parameters
-        ----------
-        det_type : str
-            Detector type
-        """
-        if det_type.lower() == "epix10k2m":
-            return ePix10k2M()
-        elif "epix10kaquad" in det_type.lower():
-            return ePix10kaQuad()
-        elif det_type.lower() == "jungfrau1m":
-            return Jungfrau1M()
-        elif det_type.lower() == "jungfrau4m":
-            return Jungfrau4M()
-        elif det_type.lower() == "rayonix":
-            return Rayonix()
-        elif det_type.lower() == "rayonix2":
-            return Rayonix2()
-        else:
-            raise ValueError("Detector type not recognized")
 
     def parse_CrystFEL(self, in_file: str):
         """
@@ -525,34 +512,10 @@ class PsanaToPyFAI:
         0 = psana frame, 1 = lab frame
     """
     
-    def __init__(self, in_file, det_type, cframe=gu.CFRAME_PSANA):
-        self.detector = self.get_detector(det_type=det_type)
+    def __init__(self, in_file, det_type, pixel_size=None, shape=None, cframe=gu.CFRAME_PSANA):
+        self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         corner_array = self.get_corner_array(in_file=in_file, cframe=cframe)
         self.detector.set_pixel_corners(ary=corner_array)
-
-    def get_detector(self, det_type):
-        """
-        Instantiate a PyFAI Detector object based on the detector type
-
-        Parameters
-        ----------
-        det_type : str
-            Detector type
-        """
-        if det_type.lower() == "epix10k2m":
-            return ePix10k2M()
-        elif "epix10kaquad" in det_type.lower():
-            return ePix10kaQuad()
-        elif det_type.lower() == "jungfrau1m":
-            return Jungfrau1M()
-        elif det_type.lower() == "jungfrau4m":
-            return Jungfrau4M()
-        elif det_type.lower() == "rayonix":
-            return Rayonix()
-        elif det_type.lower() == "rayonix2":
-            return Rayonix2()
-        else:
-            raise ValueError("Detector type not recognized")
 
     def get_corner_array(self, in_file, cframe=gu.CFRAME_PSANA):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
