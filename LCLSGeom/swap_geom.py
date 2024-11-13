@@ -187,13 +187,13 @@ class Rayonix(Detector):
         if pixel_size is None:
             pixel_size = 0.000176
         if shape is None:
-            shape = (1, 1920, 1920)
+            shape = (1920, 1920)
         self.shape = shape
-        self.n_modules = shape[0]
+        self.n_modules = 1
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.ss_size = shape[0] // asics_shape[0]
+        self.fs_size = shape[1] // asics_shape[1]
         self.pixel_size = pixel_size
         super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
@@ -507,6 +507,10 @@ class PsanaToPyFAI:
         Path to the psana .data file
     det_type : str
         Detector type
+    pixel_size : float
+        Pixel size in meters
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
     cframe : int
         Frame reference to convert to PyFAI format
         0 = psana frame, 1 = lab frame
@@ -754,11 +758,15 @@ class CrystFELToPsana:
         Detector type
     out_file : str
         Path to the output psana .data file
+    pixel_size : float
+        Pixel size in meters
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
     """
-    def __init__(self, in_file, det_type, out_file):
+    def __init__(self, in_file, det_type, out_file, pixel_size=None, shape=None):
         self.valid = False
         self.load_geom(in_file=in_file)
-        self.convert_geom_to_data(det_type=det_type, out_file=out_file)
+        self.convert_geom_to_data(det_type=det_type, out_file=out_file, pixel_size=pixel_size, shape=shape)
 
     @staticmethod
     def str_to_int_or_float(s):
