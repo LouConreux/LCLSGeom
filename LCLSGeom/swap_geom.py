@@ -631,7 +631,6 @@ class PyFAIToCrystFEL:
         sin_rot1 = np.sin(params[3])
         sin_rot2 = np.sin(params[4])
         sin_rot3 = np.sin(params[5])
-
         # Rotation about axis 1: Note this rotation is left-handed
         rot1 = np.array([[1.0, 0.0, 0.0],
                             [0.0, cos_rot1, sin_rot1],
@@ -740,7 +739,6 @@ class PyFAIToCrystFEL:
         txt = header_crystfel()
         for n in range(nsegs):
             txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
-
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
@@ -856,19 +854,14 @@ class CrystFELToPsana:
         +'\n#'\
         '\n# HDR PARENT IND        OBJECT IND     X0[um]   Y0[um]   Z0[um]   ROT-Z ROT-Y ROT-X     TILT-Z   TILT-Y   TILT-X'
 
-
     def _parse_line_as_parameter(self, line):
         assert isinstance(line, str), 'line is not a str object'
-
         fields = line.split()
         nfields = len(fields)
-
         if fields[1] != '=':
             self.list_of_ignored_records.append(line)
             return
-
         keys = fields[0].split('/') # ex: p15a3/corner_y
-
         nkeys = len(keys)
         if nkeys==1:
             if nfields>3:
@@ -877,7 +870,6 @@ class CrystFELToPsana:
             k0 = keys[0]
             self.dict_of_pars[k0] = float(fields[2]) if k0 in ('res', 'adu_per_eV', 'coffset') else\
                 ' '.join(fields[2:])
-
         elif nkeys==2:
             k0, k1 = keys
             resp = CrystFELToPsana.str_is_segment_and_asic(k0)
@@ -893,21 +885,17 @@ class CrystFELToPsana:
                 self.dict_of_pars[k0][k1] = v
             else:
                 self.dict_of_pars[k0] = {k1:v,}
-
         else:
             self.list_of_ignored_records.append(line)
             return
-
 
     def str_list_of_comments(self):
         return 'List of comments\n'\
             + '\n'.join(self.list_of_comments)
 
-
     def str_list_of_ignored_records(self):
         return 'List of ignored records\n'\
             + '\n'.join(self.list_of_ignored_records)
-
 
     def str_dict_of_pars(self):
         keys = sorted(self.dict_of_pars.keys())
@@ -922,47 +910,32 @@ class CrystFELToPsana:
 
     def load_geom(self, in_file):
         self.valid = False
-
         self.list_of_comments = []
         self.list_of_ignored_records = []
         self.dict_of_pars = {}
-
         f=open(in_file,'r')
         for linef in f:
             line = linef.strip('\n')
-
             if not line.strip(): continue # discard empty strings
             if line[0] == ';':            # accumulate list of comments
                 self.list_of_comments.append(line)
                 continue
-
             self._parse_line_as_parameter(line)
-
         f.close()
-
         self.valid = True
-
 
     def geom_to_data(self, pars, det_type, out_file):
         segname, panasics = pars
         sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
-
         X,Y,Z = sg.pixel_coord_array()
-
-
         PIX_SIZE_UM = sg.get_pix_size_um()
         M_TO_UM = 1e6
         xc0, yc0, zc0 = X[0,0], Y[0,0], Z[0,0]
-        rc0 = sqrt(xc0*xc0+yc0*yc0+zc0*zc0)
-
         zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
-
         recs = CrystFELToPsana.header_psana(list_of_cmts=self.list_of_comments, det_type=det_type)
-
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
         zoffset_m += meanroundz
-
         for i,k in enumerate(panasics.split(',')):
             dicasic = self.dict_of_pars[k]
             uf = np.array(dicasic.get('fs', None), dtype=np.float) # unit vector f
@@ -972,22 +945,17 @@ class CrystFELToPsana:
             x0pix = dicasic.get('corner_x', 0) # The units are pixel widths of the current panel
             y0pix = dicasic.get('corner_y', 0)
             z0m   = dicasic.get('coffset', 0)
-            adu_per_eV = dicasic.get('adu_per_eV', 1)
-
             v00center = vf + vs
             v00corner = np.array((x0pix*PIX_SIZE_UM, y0pix*PIX_SIZE_UM, (z0m - zoffset_m)*M_TO_UM))
             vcent = v00corner + v00center
-
             angle_deg = degrees(atan2(uf[1],uf[0]))
             angle_z, tilt_z = CrystFELToPsana.angle_and_tilt(angle_deg)
             tilt_x, tilt_y = CrystFELToPsana.tilt_xy(uf,us,i,k)
-
             recs += '\nDET:VC         0  %12s  %2d' % (segname, i)\
                 + '   %8d %8d %8d %7.0f     0     0   %8.5f %8.5f %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
         recs += '\nIP             0    DET:VC       0          0        0'\
                 ' %8d       0     0     0    0.00000  0.00000  0.00000' % (zoffset_m*M_TO_UM)
-
         f=open(out_file,'w')
         f.write(recs)
         f.close()
@@ -997,5 +965,7 @@ class CrystFELToPsana:
             det_type = "Epix10kaQuad"
         if det_type.lower() == "rayonix":
             pixel_size_um = pixel_size*1e6
-            pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size_um}:{pixel_size_um}', 'p0a0')
+            pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{int(pixel_size_um)}:{int(pixel_size_um)}', 'p0a0')
+        else:
+            pars = DETTYPE_TO_PARS.get(det_type, None)
         self.geom_to_data(pars, det_type, out_file)
