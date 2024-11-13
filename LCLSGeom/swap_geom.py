@@ -943,7 +943,7 @@ class CrystFELToPsana:
         self.valid = True
 
 
-    def geom_to_data(self, pars, det_type, out_file, pixel_size=None, shape=None):
+    def geom_to_data(self, pars, det_type, out_file):
         segname, panasics = pars
         sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
 
@@ -995,5 +995,7 @@ class CrystFELToPsana:
     def convert_geom_to_data(self, det_type, out_file, pixel_size=None, shape=None):
         if "epix10kaquad" in det_type.lower():
             det_type = "Epix10kaQuad"
-        pars = DETTYPE_TO_PARS.get(det_type.lower(), None)
-        self.geom_to_data(pars, det_type, out_file, pixel_size, shape)
+        if det_type.lower() == "rayonix":
+            pixel_size_um = pixel_size*1e6
+            pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size_um}:{pixel_size_um}', 'p0a0')
+        self.geom_to_data(pars, det_type, out_file)
