@@ -961,9 +961,10 @@ class CrystFELToPsana:
         f.close()
 
     def convert_geom_to_data(self, det_type, out_file, pixel_size=None, shape=None):
-        if "epix10kaquad" in det_type.lower():
-            det_type = "Epix10kaQuad"
-        if det_type.lower() == "rayonix":
+        det_type = det_type.lower()
+        if "epix10kaquad" in det_type:
+            det_type = "epix10kaquad"
+        if det_type == "rayonix":
             pixel_size_um = pixel_size*1e6
             pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{int(pixel_size_um)}:{int(pixel_size_um)}', 'p0a0')
         else:
