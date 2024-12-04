@@ -682,19 +682,13 @@ class PyFAIToCrystFEL:
         """
         return x*1e6, y*1e6, z*1e6
 
-    def correct_geom(self, center=False):
+    def correct_geom(self):
         """
         Correct the geometry based on the given parameters found by PyFAI calibration
         Finally scale to micrometers (needed for writing CrystFEL .geom files)
-
-        Parameters
-        ----------
-        center : bool
-            If True, return pixel center coordinates on detector frame
-            If False, return pixel corner coordinates on detector frame
         """
         params = self.params
-        p1, p2, p3 = self.detector.calc_cartesian_positions(center=center)
+        p1, p2, p3 = self.detector.calc_cartesian_positions()
         dist = self.params[0]
         poni1 = self.params[1]
         poni2 = self.params[2]
@@ -964,7 +958,7 @@ class CrystFELToPsana:
         det_type = det_type.lower()
         if "epix10kaquad" in det_type:
             det_type = "epix10kaquad"
-        if det_type == "rayonix":
+        elif det_type == "rayonix":
             pixel_size_um = pixel_size*1e6
             pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{int(pixel_size_um)}:{int(pixel_size_um)}', 'p0a0')
         else:
