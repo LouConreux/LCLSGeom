@@ -603,15 +603,12 @@ class PyFAIToCrystFEL:
         Path to the psana .data file for retrieving segmentation information
     out_file : str
         Path to the output .geom file
-    center : bool
-        If True, return pixel center coordinates on detector frame
-        If False, return pixel corner coordinates on detector frame
     """
 
-    def __init__(self, detector, params, psana_file, out_file, center=False):
+    def __init__(self, detector, params, psana_file, out_file):
         self.detector = detector
         self.params = params
-        self.correct_geom(center=center)
+        self.correct_geom()
         self.convert_to_geom(psana_file=psana_file, out_file=out_file)
 
     def rotation_matrix(self, params):
