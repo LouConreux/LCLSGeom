@@ -929,8 +929,8 @@ class CrystFELToPsana:
         zoffset_m += meanroundz
         for i,k in enumerate(panasics.split(',')):
             dicasic = self.dict_of_pars[k]
-            uf = np.array(dicasic.get('fs', None), dtype=np.float) # unit vector f
-            us = np.array(dicasic.get('ss', None), dtype=np.float) # unit vector s
+            uf = np.array(dicasic.get('fs', None), dtype=np.float64) # unit vector f
+            us = np.array(dicasic.get('ss', None), dtype=np.float64) # unit vector s
             vf = uf*abs(xc0)
             vs = us*abs(yc0)
             x0pix = dicasic.get('corner_x', 0) # The units are pixel widths of the current panel
