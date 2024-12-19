@@ -83,7 +83,7 @@ class ePix10k2M(Detector):
             pixel_size = 0.0001
         if shape is None:
             shape = (16, 352, 384)
-        self.shape = shape
+        self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -109,7 +109,7 @@ class ePix10kaQuad(Detector):
             pixel_size = 0.0001
         if shape is None:
             shape = (4, 352, 384)
-        self.shape = shape
+        self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -135,7 +135,7 @@ class Jungfrau1M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (4, 512, 1024)
-        self.shape = shape
+        self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -161,7 +161,7 @@ class Jungfrau4M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (8, 512, 1024)
-        self.shape = shape
+        self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
         self.asics_shape = asics_shape
@@ -187,13 +187,13 @@ class Rayonix(Detector):
         if pixel_size is None:
             pixel_size = 0.000176
         if shape is None:
-            shape = (1920, 1920)
-        self.shape = shape
+            shape = (1, 1920, 1920)
+        self.raw_shape = shape
         self.n_modules = 1
         self.n_asics = n_asics
         self.asics_shape = asics_shape
-        self.ss_size = shape[0] // asics_shape[0]
-        self.fs_size = shape[1] // asics_shape[1]
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
         self.pixel_size = pixel_size
         super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
