@@ -111,9 +111,9 @@ def pick_template(exp, det_type, src, pixel_size=None, shape=None):
     in_file = os.path.join(cdir, group, src, type, "0-end.data")
     os.makedirs(os.path.dirname(in_file), exist_ok=True)
 
-    with open(in_file, "w") as file:
-        file.writelines(content)
-
+    file = open(in_file, "w")
+    file.writelines(content)
+    file.close()
     return in_file
 
 class ePix10k2M(Detector):
