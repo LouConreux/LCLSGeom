@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import numpy as np
 from math import atan2, degrees, sqrt
@@ -65,6 +66,44 @@ def get_detector(det_type, pixel_size=None, shape=None):
         return Rayonix(pixel_size=pixel_size, shape=shape)
     else:
         raise ValueError("Detector type not recognized")
+
+def pick_template(det_type, pixel_size=None, shape=None):
+    """
+    Pick the appropriate psana format template based on the detector type
+    Parameters pixel size, and shape are required for the Rayonix detector
+
+    Parameters
+    ----------
+    det_type : str
+        Detector type
+    pixel_size : float
+        Pixel size in µm
+    shape : tuple
+        Detector shape
+    """
+    current_dir = os.path.dirname(__file__)
+    in_file = os.path.join(current_dir, "templates", det_type, "0-end.data")
+    if not os.path.exists(in_file):
+        raise FileNotFoundError(f"Template not found for detector {det_type}.")
+    
+    with open(in_file, "r") as file:
+        content = file.read()
+
+    if det_type.lower() == "rayonix":
+        for i, line in enumerate(content):
+            if "MTRX:V2" in line and shape is not None and pixel_size is not None:
+                updated_line = re.sub(
+                    r"MTRX:V2:\d+:\d+:\d+:\d+",
+                    f"MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size}:{pixel_size}",
+                    line
+                )
+                content[i] = updated_line
+                break
+
+        with open(in_file, "w") as file:
+            file.writelines(content)
+    group = gu.dic_det_tname_lower_to_calib_group.get(det_type.lower())
+    return "".join(content), group
 
 class ePix10k2M(Detector):
     """
