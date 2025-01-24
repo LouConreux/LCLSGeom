@@ -87,16 +87,15 @@ def pick_template(exp, det_type, src, pixel_size=None, shape=None):
         Detector shape
     """
     current_dir = os.path.dirname(__file__)
-    in_file = os.path.join(current_dir, "templates", det_type, "0-end.data")
+    template_file = os.path.join(current_dir, "templates", det_type, "0-end.data")
     if not os.path.exists(in_file):
         raise FileNotFoundError(f"Template not found for detector {det_type}.")
     
-    with open(in_file, "r") as file:
+    with open(template_file, "r") as file:
         content = file.readlines()
 
     if det_type.lower() == "rayonix":
         for i, line in enumerate(content):
-            print(i, line)
             if "MTRX:V2" in line and shape is not None and pixel_size is not None:
                 updated_line = re.sub(
                     r"MTRX:V2:\d+:\d+:\d+:\d+",
