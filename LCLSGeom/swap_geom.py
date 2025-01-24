@@ -67,15 +67,20 @@ def get_detector(det_type, pixel_size=None, shape=None):
     else:
         raise ValueError("Detector type not recognized")
 
-def pick_template(det_type, pixel_size=None, shape=None):
+def pick_template(exp, det_type, src, pixel_size=None, shape=None):
     """
     Pick the appropriate psana format template based on the detector type
     Parameters pixel size, and shape are required for the Rayonix detector
+    Populate the experiment calibration directory with the template
 
     Parameters
     ----------
+    exp : str
+        Experiment name
     det_type : str
         Detector type
+    src : str
+        Source name of end station
     pixel_size : float
         Pixel size in µm
     shape : tuple
@@ -100,10 +105,16 @@ def pick_template(det_type, pixel_size=None, shape=None):
                 content[i] = updated_line
                 break
 
-        with open(in_file, "w") as file:
-            file.writelines(content)
+    cdir = f"/sdf/data/lcls/ds/{exp[:3]}/{exp}/calib"
     group = gu.dic_det_tname_lower_to_calib_group.get(det_type.lower())
-    return "".join(content), group
+    type = "geometry"
+    in_file = os.path.join(cdir, group, src, type, "0-end.data")
+    os.makedirs(os.path.dirname(in_file), exist_ok=True)
+
+    with open(in_file, "w") as file:
+        file.writelines(content)
+
+    return in_file
 
 class ePix10k2M(Detector):
     """
