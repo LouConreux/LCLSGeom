@@ -96,6 +96,7 @@ def pick_template(exp, det_type, src, pixel_size=None, shape=None):
 
     if det_type.lower() == "rayonix":
         for i, line in enumerate(content):
+            print(i, line)
             if "MTRX:V2" in line and shape is not None and pixel_size is not None:
                 updated_line = re.sub(
                     r"MTRX:V2:\d+:\d+:\d+:\d+",
