@@ -87,7 +87,7 @@ def pick_template(det_type, pixel_size=None, shape=None):
         raise FileNotFoundError(f"Template not found for detector {det_type}.")
     
     with open(in_file, "r") as file:
-        content = file.read()
+        content = file.readlines()
 
     if det_type.lower() == "rayonix":
         for i, line in enumerate(content):
