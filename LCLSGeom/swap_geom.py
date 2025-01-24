@@ -88,7 +88,7 @@ def pick_template(exp, det_type, src, pixel_size=None, shape=None):
     """
     current_dir = os.path.dirname(__file__)
     template_file = os.path.join(current_dir, "templates", det_type, "0-end.data")
-    if not os.path.exists(in_file):
+    if not os.path.exists(template_file):
         raise FileNotFoundError(f"Template not found for detector {det_type}.")
     
     with open(template_file, "r") as file:
