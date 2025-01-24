@@ -109,8 +109,6 @@ def pick_template(exp, det_type, src, pixel_size=None, shape=None):
     group = gu.dic_det_tname_lower_to_calib_group.get(det_type.lower())
     type = "geometry"
     in_file = os.path.join(cdir, group, src, type, "0-end.data")
-    os.makedirs(os.path.dirname(in_file), exist_ok=True)
-
     file = open(in_file, "w")
     file.writelines(content)
     file.close()
