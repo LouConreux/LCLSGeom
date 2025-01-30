@@ -567,6 +567,8 @@ class PsanaToPyFAI:
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
+        corners = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 3])
+
 
         for p in range(nmods):
             # Calculate half-steps for x, y, and z for current panel
