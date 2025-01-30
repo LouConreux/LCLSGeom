@@ -580,33 +580,37 @@ class PsanaToPyFAI:
                 fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
                 ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
                 slab_offset = p * asics_shape[0] * ss_size
-                fs_portion_slab = slice(acol * fs_size, (acol + 1) * fs_size)
                 ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
                 
-                # Calculate half-steps for x, y, and z for current panel
-                dx = np.diff(x[p, ss_portion, fs_portion], axis=0, append=x[p,-1:,:]) / 2
-                dy = np.diff(y[p, ss_portion, fs_portion], axis=1, append=y[p,:,-1:]) / 2
-                dz = np.diff(z[p, ss_portion, fs_portion], axis=0, append=z[p,-1:,:]) / 2
+                # Extract current ASIC coordinates
+                x_asic = x[p, ss_portion, fs_portion]
+                y_asic = y[p, ss_portion, fs_portion]
+                z_asic = z[p, ss_portion, fs_portion]
+                
+                # Calculate half-steps for x, y, and z for current ASIC
+                dx = np.diff(x_asic, axis=1, append=2*x_asic[:,-1:] - x_asic[:,-2:-1]) / 2
+                dy = np.diff(y_asic, axis=1, append=2*y_asic[:,-1:] - y_asic[:,-2:-1]) / 2
+                dz = np.diff(z_asic, axis=1, append=2*z_asic[:,-1:] - z_asic[:,-2:-1]) / 2
                 
                 # Top-left corner (0)
-                corners[ss_portion_slab, fs_portion_slab, 0, 0] = z[p] - dz  # z coordinate
-                corners[ss_portion_slab, fs_portion_slab, 0, 1] = y[p] + dy  # y coordinate
-                corners[ss_portion_slab, fs_portion_slab, 0, 2] = x[p] - dx  # x coordinate
+                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic - dz  # z coordinate
+                corners[ss_portion_slab, fs_portion, 0, 1] = y_asic + dy  # y coordinate
+                corners[ss_portion_slab, fs_portion, 0, 2] = x_asic - dx  # x coordinate
                 
                 # Top-right corner (1)
-                corners[ss_portion_slab, fs_portion_slab, 1, 0] = z[p] + dz
-                corners[ss_portion_slab, fs_portion_slab, 1, 1] = y[p] + dy
-                corners[ss_portion_slab, fs_portion_slab, 1, 2] = x[p] + dx
+                corners[ss_portion_slab, fs_portion, 1, 0] = z_asic + dz
+                corners[ss_portion_slab, fs_portion, 1, 1] = y_asic + dy
+                corners[ss_portion_slab, fs_portion, 1, 2] = x_asic + dx
                 
                 # Bottom-right corner (2)
-                corners[ss_portion_slab, fs_portion_slab, 2, 0] = z[p] + dz
-                corners[ss_portion_slab, fs_portion_slab, 2, 1] = y[p] - dy
-                corners[ss_portion_slab, fs_portion_slab, 2, 2] = x[p] + dx
+                corners[ss_portion_slab, fs_portion, 2, 0] = z_asic + dz
+                corners[ss_portion_slab, fs_portion, 2, 1] = y_asic - dy
+                corners[ss_portion_slab, fs_portion, 2, 2] = x_asic + dx
                 
                 # Bottom-left corner (3)
-                corners[ss_portion_slab, fs_portion_slab, 3, 0] = z[p] - dz
-                corners[ss_portion_slab, fs_portion_slab, 3, 1] = y[p] - dy
-                corners[ss_portion_slab, fs_portion_slab, 3, 2] = x[p] - dx
+                corners[ss_portion_slab, fs_portion, 3, 0] = z_asic - dz
+                corners[ss_portion_slab, fs_portion, 3, 1] = y_asic - dy
+                corners[ss_portion_slab, fs_portion, 3, 2] = x_asic - dx
         return corners
     
     def psana_to_pyfai(self, x, y, z):
