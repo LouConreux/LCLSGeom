@@ -588,29 +588,30 @@ class PsanaToPyFAI:
                 z_asic = z[p, ss_portion, fs_portion]
                 
                 # Calculate half-steps for x, y, and z for current ASIC
-                dx = np.diff(x_asic, axis=1, append=2*x_asic[:,-1:] - x_asic[:,-2:-1]) / 2
-                dy = np.diff(y_asic, axis=1, append=2*y_asic[:,-1:] - y_asic[:,-2:-1]) / 2
-                dz = np.diff(z_asic, axis=1, append=2*z_asic[:,-1:] - z_asic[:,-2:-1]) / 2
+                dx = np.diff(x_asic, axis=0, append=(x_asic[:,-1:]+np.full(x_asic[:,-1:].shape, self.detector.pixel1))) / 2
+                dy = np.diff(y_asic, axis=1, append=(y_asic[:,-1:]+np.full(y_asic[:,-1:].shape, self.detector.pixel2))) / 2
+                dz1 = np.diff(z_asic, axis=0, append=z_asic[:,-1:]) / 2
+                dz2 = np.diff(z_asic, axis=1, append=z_asic[:,-1:]) / 2
                 
                 # Top-left corner (0)
-                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic - dz  # z coordinate
-                corners[ss_portion_slab, fs_portion, 0, 1] = y_asic + dy  # y coordinate
-                corners[ss_portion_slab, fs_portion, 0, 2] = x_asic - dx  # x coordinate
+                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic - dz1 - dz2  # z coordinate = dim3
+                corners[ss_portion_slab, fs_portion, 0, 1] = x_asic - dx  # x coordinate = dim1 = slow-scan dim
+                corners[ss_portion_slab, fs_portion, 0, 2] = y_asic - dy  # y coordinate = dim2 = fast-scan dim
                 
                 # Top-right corner (1)
-                corners[ss_portion_slab, fs_portion, 1, 0] = z_asic + dz
-                corners[ss_portion_slab, fs_portion, 1, 1] = y_asic + dy
-                corners[ss_portion_slab, fs_portion, 1, 2] = x_asic + dx
+                corners[ss_portion_slab, fs_portion, 1, 0] = z_asic - dz1 + dz2
+                corners[ss_portion_slab, fs_portion, 1, 1] = x_asic - dx
+                corners[ss_portion_slab, fs_portion, 1, 2] = y_asic + dy
                 
                 # Bottom-right corner (2)
-                corners[ss_portion_slab, fs_portion, 2, 0] = z_asic + dz
-                corners[ss_portion_slab, fs_portion, 2, 1] = y_asic - dy
-                corners[ss_portion_slab, fs_portion, 2, 2] = x_asic + dx
+                corners[ss_portion_slab, fs_portion, 2, 0] = z_asic + dz1 + dz2
+                corners[ss_portion_slab, fs_portion, 2, 1] = x_asic + dx
+                corners[ss_portion_slab, fs_portion, 2, 2] = y_asic + dy
                 
                 # Bottom-left corner (3)
-                corners[ss_portion_slab, fs_portion, 3, 0] = z_asic - dz
-                corners[ss_portion_slab, fs_portion, 3, 1] = y_asic - dy
-                corners[ss_portion_slab, fs_portion, 3, 2] = x_asic - dx
+                corners[ss_portion_slab, fs_portion, 3, 0] = z_asic + dz1 - dz2
+                corners[ss_portion_slab, fs_portion, 3, 1] = x_asic + dx
+                corners[ss_portion_slab, fs_portion, 3, 2] = y_asic - dy
         return corners
     
     def psana_to_pyfai(self, x, y, z):
@@ -624,7 +625,7 @@ class PsanaToPyFAI:
             z = np.zeros_like(z)
         else:
             z -= np.mean(z)
-        return x, y, z
+        return -x, y, -z
 
     def get_corner_array(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
@@ -764,9 +765,9 @@ class PyFAIToCrystFEL:
         cos_rot1 = np.cos(params[3])
         cos_rot2 = np.cos(params[4])
         distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z -= distance_sample_detector
+        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
-        return x, y, z
+        return -x, y, -z
 
     def correct_geom(self):
         """
