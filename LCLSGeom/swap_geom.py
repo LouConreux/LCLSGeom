@@ -624,7 +624,7 @@ class PsanaToPyFAI:
             z = np.zeros_like(z)
         else:
             z -= np.mean(z)
-        return y, -x, -z
+        return x, y, z
 
     def get_corner_array(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
@@ -764,9 +764,9 @@ class PyFAIToCrystFEL:
         cos_rot1 = np.cos(params[3])
         cos_rot2 = np.cos(params[4])
         distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
+        z -= distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
-        return -y, x, -z
+        return x, y, z
 
     def correct_geom(self):
         """
