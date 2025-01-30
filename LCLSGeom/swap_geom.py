@@ -568,7 +568,7 @@ class PsanaToPyFAI:
     def __init__(self, in_file, det_type, pixel_size=None, shape=None, cframe=gu.CFRAME_PSANA):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         corner_array = self.get_corner_array(in_file=in_file, cframe=cframe)
-        self.detector.set_pixel_corners(ary=corner_array)
+        #self.detector.set_pixel_corners(ary=corner_array)
 
     def get_corner_array(self, in_file, cframe=gu.CFRAME_PSANA):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
