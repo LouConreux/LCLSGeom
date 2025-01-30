@@ -553,7 +553,7 @@ class PsanaToPyFAI:
     
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
-        corner_array = self.get_corner_array(in_file=in_file)
+        corner_array = self.pixel_centers_to_corners(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
 
     def pixel_centers_to_corners(self, in_file):
