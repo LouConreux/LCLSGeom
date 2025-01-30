@@ -561,14 +561,13 @@ class PsanaToPyFAI:
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
-        x, y, z = x*1e-6, y*1e-6, z*1e-6
+        x, y, z = self.psana_to_pyfai(x, y, z)
         nmods = self.detector.n_modules
         nasics = self.detector.n_asics
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
         corners = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
-
 
         for p in range(nmods):
             # Calculate half-steps for x, y, and z for current panel
@@ -598,6 +597,19 @@ class PsanaToPyFAI:
 
         corners = corners.reshape(nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3)
         return corners
+    
+    def psana_to_pyfai(self, x, y, z):
+        """
+        Convert psana coordinates to pyfai coordinates
+        """
+        x = x * 1e-6
+        y = y * 1e-6
+        z = z * 1e-6
+        if len(np.unique(z))==1:
+            z = np.zeros_like(z)
+        else:
+            z -= np.mean(z)
+        return y, -x, -z
 
     def get_corner_array(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
