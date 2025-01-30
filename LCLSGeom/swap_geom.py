@@ -567,35 +567,46 @@ class PsanaToPyFAI:
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
-        corners = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
+        corners = np.zeros([nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
 
         for p in range(nmods):
-            # Calculate half-steps for x, y, and z for current panel
-            dx = np.diff(x[p], axis=0, append=x[p,-1:,:]) / 2
-            dy = np.diff(y[p], axis=1, append=y[p,:,-1:]) / 2
-            dz = np.diff(z[p], axis=0, append=z[p,-1:,:]) / 2
-            
-            # Top-left corner (0)
-            corners[p, :, :, 0, 0] = z[p] - dz  # z coordinate
-            corners[p, :, :, 0, 1] = y[p] + dy  # y coordinate
-            corners[p, :, :, 0, 2] = x[p] - dx  # x coordinate
-            
-            # Top-right corner (1)
-            corners[p, :, :, 1, 0] = z[p] + dz
-            corners[p, :, :, 1, 1] = y[p] + dy
-            corners[p, :, :, 1, 2] = x[p] + dx
-            
-            # Bottom-right corner (2)
-            corners[p, :, :, 2, 0] = z[p] + dz
-            corners[p, :, :, 2, 1] = y[p] - dy
-            corners[p, :, :, 2, 2] = x[p] + dx
-            
-            # Bottom-left corner (3)
-            corners[p, :, :, 3, 0] = z[p] - dz
-            corners[p, :, :, 3, 1] = y[p] - dy
-            corners[p, :, :, 3, 2] = x[p] - dx
-
-        corners = corners.reshape(nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3)
+            for asic in range(nasics):
+                if nasics == 1:
+                    arow = 0
+                    acol = 0
+                else:
+                    arow = asic // (nasics//2)
+                    acol = asic % (nasics//2)
+                fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
+                ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
+                slab_offset = p * asics_shape[0] * ss_size
+                fs_portion_slab = slice(acol * fs_size, (acol + 1) * fs_size)
+                ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
+                
+                # Calculate half-steps for x, y, and z for current panel
+                dx = np.diff(x[p, ss_portion, fs_portion], axis=0, append=x[p,-1:,:]) / 2
+                dy = np.diff(y[p, ss_portion, fs_portion], axis=1, append=y[p,:,-1:]) / 2
+                dz = np.diff(z[p, ss_portion, fs_portion], axis=0, append=z[p,-1:,:]) / 2
+                
+                # Top-left corner (0)
+                corners[ss_portion_slab, fs_portion_slab, 0, 0] = z[p] - dz  # z coordinate
+                corners[ss_portion_slab, fs_portion_slab, 0, 1] = y[p] + dy  # y coordinate
+                corners[ss_portion_slab, fs_portion_slab, 0, 2] = x[p] - dx  # x coordinate
+                
+                # Top-right corner (1)
+                corners[ss_portion_slab, fs_portion_slab, 1, 0] = z[p] + dz
+                corners[ss_portion_slab, fs_portion_slab, 1, 1] = y[p] + dy
+                corners[ss_portion_slab, fs_portion_slab, 1, 2] = x[p] + dx
+                
+                # Bottom-right corner (2)
+                corners[ss_portion_slab, fs_portion_slab, 2, 0] = z[p] + dz
+                corners[ss_portion_slab, fs_portion_slab, 2, 1] = y[p] - dy
+                corners[ss_portion_slab, fs_portion_slab, 2, 2] = x[p] + dx
+                
+                # Bottom-left corner (3)
+                corners[ss_portion_slab, fs_portion_slab, 3, 0] = z[p] - dz
+                corners[ss_portion_slab, fs_portion_slab, 3, 1] = y[p] - dy
+                corners[ss_portion_slab, fs_portion_slab, 3, 2] = x[p] - dx
         return corners
     
     def psana_to_pyfai(self, x, y, z):
