@@ -549,15 +549,53 @@ class PsanaToPyFAI:
         Pixel size in meters
     shape : tuple
         Detector shape (n_modules, ss_size, fs_size)
-    cframe : int
-        Frame reference to convert to PyFAI format
-        0 = psana frame, 1 = lab frame
     """
     
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         corner_array = self.get_corner_array(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
+
+    def pixel_centers_to_corners(self, in_file):
+        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
+        top = geo.get_top_geo()
+        child = top.get_list_of_children()[0]
+        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
+        x, y, z = x*1e-6, y*1e-6, z*1e-6
+        nmods = self.detector.n_modules
+        nasics = self.detector.n_asics
+        asics_shape = self.detector.asics_shape
+        fs_size = self.detector.fs_size
+        ss_size = self.detector.ss_size
+
+        for p in range(nmods):
+            # Calculate half-steps for x, y, and z for current panel
+            dx = np.diff(x[p], axis=0, append=x[p,-1:,:]) / 2
+            dy = np.diff(y[p], axis=1, append=y[p,:,-1:]) / 2
+            dz = np.diff(z[p], axis=0, append=z[p,-1:,:]) / 2
+            
+            # Top-left corner (0)
+            corners[p, :, :, 0, 0] = z[p] - dz  # z coordinate
+            corners[p, :, :, 0, 1] = y[p] + dy  # y coordinate
+            corners[p, :, :, 0, 2] = x[p] - dx  # x coordinate
+            
+            # Top-right corner (1)
+            corners[p, :, :, 1, 0] = z[p] + dz
+            corners[p, :, :, 1, 1] = y[p] + dy
+            corners[p, :, :, 1, 2] = x[p] + dx
+            
+            # Bottom-right corner (2)
+            corners[p, :, :, 2, 0] = z[p] + dz
+            corners[p, :, :, 2, 1] = y[p] - dy
+            corners[p, :, :, 2, 2] = x[p] + dx
+            
+            # Bottom-left corner (3)
+            corners[p, :, :, 3, 0] = z[p] - dz
+            corners[p, :, :, 3, 1] = y[p] - dy
+            corners[p, :, :, 3, 2] = x[p] - dx
+
+        corners = corners.reshape(nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3)
+        return corners
 
     def get_corner_array(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
