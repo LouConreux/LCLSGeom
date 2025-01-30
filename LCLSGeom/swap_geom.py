@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import numpy as np
-from math import atan2, degrees, sqrt
+from math import atan2, degrees
 from pyFAI.detectors import Detector
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.GeometryAccess import GeometryAccess
@@ -306,11 +306,11 @@ class CrystFELToPyFAI:
         0 = psana frame, 1 = lab frame
     """
 
-    def __init__(self, in_file, det_type, pixel_size=None, shape=None, cframe=gu.CFRAME_PSANA):
+    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         parser = self.parse_CrystFEL(in_file=in_file)
         pix_pos = self.get_pixel_coordinates(parser=parser)
-        corner_array = self.get_corner_array(pix_pos=pix_pos, parser=parser, cframe=cframe)
+        corner_array = self.get_corner_array(pix_pos=pix_pos, parser=parser)
         self.detector.set_pixel_corners(ary=corner_array)
 
     def parse_CrystFEL(self, in_file: str):
@@ -479,7 +479,7 @@ class CrystFELToPyFAI:
             pix_pos[:, :, :, 2] -= np.mean(pix_pos[:, :, :, 2])
         return pix_pos
 
-    def get_corner_array(self, pix_pos, parser, cframe=gu.CFRAME_PSANA):
+    def get_corner_array(self, pix_pos, parser):
         """
         Convert to the corner array needed by PyFAI
 
@@ -529,20 +529,9 @@ class CrystFELToPyFAI:
                 x = c1x[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
                 y = c1y[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
                 z = c1z[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                # Convert to PyFAI format for detector definition
-                # 0 = z along beam, 1 = dim1 (Y) fs, 2 = dim2 (X) ss
-                if cframe==0:
-                    # psana frame to pyFAI frame
-                    # 0 = z along beam, 1 = dim1 (vertical) fs, 2 = dim2 (horizontal) ss
-                    pyfai_fmt[ss_portion, fs_portion, :, 0] = z
-                    pyfai_fmt[ss_portion, fs_portion, :, 1] = x
-                    pyfai_fmt[ss_portion, fs_portion, :, 2] = y
-                elif cframe==1:
-                    # Lab frame to pyFAI frame
-                    # 0 = z along beam, 1 = dim1 (vertical) fs, 2 = dim2 (horizontal) ss
-                    pyfai_fmt[ss_portion, fs_portion, :, 0] = z
-                    pyfai_fmt[ss_portion, fs_portion, :, 1] = y
-                    pyfai_fmt[ss_portion, fs_portion, :, 2] = x
+                pyfai_fmt[ss_portion, fs_portion, :, 0] = z
+                pyfai_fmt[ss_portion, fs_portion, :, 1] = y
+                pyfai_fmt[ss_portion, fs_portion, :, 2] = x
         return pyfai_fmt
 
 class PsanaToPyFAI:
@@ -565,16 +554,16 @@ class PsanaToPyFAI:
         0 = psana frame, 1 = lab frame
     """
     
-    def __init__(self, in_file, det_type, pixel_size=None, shape=None, cframe=gu.CFRAME_PSANA):
+    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
-        corner_array = self.get_corner_array(in_file=in_file, cframe=cframe)
-        #self.detector.set_pixel_corners(ary=corner_array)
+        corner_array = self.get_corner_array(in_file=in_file)
+        self.detector.set_pixel_corners(ary=corner_array)
 
-    def get_corner_array(self, in_file, cframe=gu.CFRAME_PSANA):
+    def get_corner_array(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=cframe)
+        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
         x, y, z = x*1e-6, y*1e-6, z*1e-6
         geo1 = geo.get_seg_geo() # GeometryObject
         seg = geo1.algo # object of the SegmentGeometry subclass
@@ -628,14 +617,9 @@ class PsanaToPyFAI:
                     znac = np.zeros_like(znac)
                 else:
                     znac -= np.mean(znac)
-                if cframe==0:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = xnac
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = ynac
-                elif cframe==1:
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = ynac
-                    pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = xnac
+                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
+                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = ynac
+                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = xnac
         return pyfai_fmt
 
 class PyFAIToCrystFEL:
