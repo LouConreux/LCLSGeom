@@ -595,11 +595,11 @@ class PsanaToPyFAI:
                 
                 # Calculate half-steps according to panel orientation
                 if x_axis == 0:
-                    dx = np.diff(x_asic, axis=0, append=(2*x_asic[-2:-1,0]-x_asic[-1:,:])) / 2
-                    dy = np.diff(y_asic, axis=1, append=(2*y_asic[:,-2:-1]-y_asic[:,-1:])) / 2
+                    dx = np.diff(x_asic, axis=0, append=(2*x_asic[-1:,0]-x_asic[-2:-1,:])) / 2
+                    dy = np.diff(y_asic, axis=1, append=(2*y_asic[:,-1:]-y_asic[:,-2:-1])) / 2
                 else:
-                    dx = np.diff(x_asic, axis=1, append=(2*x_asic[:,-2:-1]-x_asic[:,-1:])) / 2
-                    dy = np.diff(y_asic, axis=0, append=(2*y_asic[-2:-1,0]-y_asic[-1:,:])) / 2
+                    dx = np.diff(x_asic, axis=1, append=(2*x_asic[:,-1:]-x_asic[:,-2:-1])) / 2
+                    dy = np.diff(y_asic, axis=0, append=(2*y_asic[-1:,0]-y_asic[-2:-1,:])) / 2
                 
                 # Top-left corner (0)
                 corners[ss_portion_slab, fs_portion, 0, 0] = z_asic       # z coordinate = dim0
