@@ -675,8 +675,8 @@ class PsanaToPyFAI:
                 xasic = x[p, ss_portion, fs_portion]
                 yasic = y[p, ss_portion, fs_portion]
                 zasic = z[p, ss_portion, fs_portion]
-                ss_units = np.array([0, 0, 1, 1])
-                fs_units = np.array([0, 1, 1, 0])
+                ss_units = np.array([0, -1, -1, 0])
+                fs_units = np.array([0, 0, -1, -1])
                 xasic = xasic[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
                 yasic = yasic[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
                 zasic = zasic[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
