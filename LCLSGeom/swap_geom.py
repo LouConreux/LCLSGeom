@@ -658,8 +658,8 @@ class PsanaToPyFAI:
                 xp[ss_size * asics_shape[0] - 1,0] - xp[0, 0],\
                 yp[ss_size * asics_shape[0] - 1,0] - yp[0, 0],\
                 zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
-            nfs = np.linalg.norm(vfs)
-            nss = np.linalg.norm(vss)
+            nfs = vfs / np.linalg.norm(vfs)
+            nss = vss / np.linalg.norm(vss)
             for a in range(nasics):
                 if nasics == 1:
                     arow = 0
@@ -672,8 +672,8 @@ class PsanaToPyFAI:
                 slab_offset = p * asics_shape[0] * ss_size
                 fs_portion_slab = slice(acol * fs_size, (acol + 1) * fs_size)
                 ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
-                ssx, ssy, ssz = np.array(nss) * self.detector.pixel1
-                fsx, fsy, fsz = np.array(nfs) * self.detector.pixel2
+                ssx, ssy, ssz = nss * self.detector.pixel1
+                fsx, fsy, fsz = nfs * self.detector.pixel2
                 xasic = x[p, ss_portion, fs_portion]
                 yasic = y[p, ss_portion, fs_portion]
                 zasic = z[p, ss_portion, fs_portion]
