@@ -677,12 +677,12 @@ class PsanaToPyFAI:
                 zasic = z[p, ss_portion, fs_portion]
                 ss_units = np.array([0, 1, 1, 0])
                 fs_units = np.array([0, 0, 1, 1])
-                x = xasic[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
-                y = yasic[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
-                z = zasic[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                pixel_corners[ss_portion_slab, fs_portion_slab, :, 0] = z
-                pixel_corners[ss_portion_slab, fs_portion_slab, :, 1] = x
-                pixel_corners[ss_portion_slab, fs_portion_slab, :, 2] = y
+                xasic = xasic[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
+                yasic = yasic[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
+                zasic = zasic[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 0] = zasic
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 1] = xasic
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 2] = yasic
         return pixel_corners
 
 class PyFAIToCrystFEL:
