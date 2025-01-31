@@ -590,8 +590,8 @@ class PsanaToPyFAI:
                 # Calculate half-steps for x, y, and z for current ASIC
                 dx = np.diff(x_asic, axis=0, append=x_asic[-1:,:] + self.detector.pixel1) / 2
                 dy = np.diff(y_asic, axis=1, append=y_asic[:,-1:] + self.detector.pixel2) / 2
-                dz1 = np.diff(z_asic, axis=0, append=z_asic[-1:,:]) / 2
-                dz2 = np.diff(z_asic, axis=1, append=z_asic[:,-1:]) / 2
+                dz1 = np.diff(z_asic, axis=0, append=2*z_asic[-1:,:]-z_asic[-2:-1,:]) / 2
+                dz2 = np.diff(z_asic, axis=1, append=2*z_asic[:,-1:]-z_asic[:,-2:-1]) / 2
                 
                 # Top-left corner (0)
                 corners[ss_portion_slab, fs_portion, 0, 0] = z_asic - dz1 - dz2  # z coordinate = dim3
