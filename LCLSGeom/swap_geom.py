@@ -587,12 +587,22 @@ class PsanaToPyFAI:
                 y_asic = y[p, ss_portion, fs_portion]
                 z_asic = z[p, ss_portion, fs_portion]
                 
-                # Calculate half-steps for x, y, and z for current ASIC
-                dx = np.diff(x_asic, axis=0, append=x_asic[-1:,:] + self.detector.pixel1) / 2
-                dy = np.diff(y_asic, axis=1, append=y_asic[:,-1:] + self.detector.pixel2) / 2
+                # Determine panel orientation by checking coordinate gradients
+                dx_axis0 = np.abs(np.diff(x_asic, axis=0)).mean()
+                dx_axis1 = np.abs(np.diff(x_asic, axis=1)).mean()
+                x_axis = 0 if dx_axis0 > dx_axis1 else 1
+                y_axis = 1 - x_axis  # opposite axis
+                
+                # Calculate half-steps according to panel orientation
+                if x_axis == 0:
+                    dx = np.diff(x_asic, axis=0, append=(2*x_asic[-2:-1,0]-x_asic[-1:,:])) / 2
+                    dy = np.diff(y_asic, axis=1, append=(2*y_asic[:,-2:-1]-y_asic[:,-1:])) / 2
+                else:
+                    dx = np.diff(x_asic, axis=1, append=(2*x_asic[:,-2:-1]-x_asic[:,-1:])) / 2
+                    dy = np.diff(y_asic, axis=0, append=(2*y_asic[-2:-1,0]-y_asic[-1:,:])) / 2
                 
                 # Top-left corner (0)
-                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic       # z coordinate = dim3
+                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic       # z coordinate = dim0
                 corners[ss_portion_slab, fs_portion, 0, 1] = x_asic - dx  # x coordinate = dim1 = slow-scan dim
                 corners[ss_portion_slab, fs_portion, 0, 2] = y_asic - dy  # y coordinate = dim2 = fast-scan dim
                 
