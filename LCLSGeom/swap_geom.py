@@ -651,13 +651,13 @@ class PsanaToPyFAI:
             yp = y[p, :]
             zp = z[p, :]
             vfs = np.array((\
-                xp[0, ss_size * asics_shape[0] - 1] - xp[0, 0],\
-                yp[0, ss_size * asics_shape[0] - 1] - yp[0, 0],\
-                zp[0, ss_size * asics_shape[0] - 1] - zp[0, 0]))
+                xp[0, fs_size * asics_shape[1] - 1] - xp[0, 0],\
+                yp[0, fs_size * asics_shape[1] - 1] - yp[0, 0],\
+                zp[0, fs_size * asics_shape[1] - 1] - zp[0, 0]))
             vss = np.array((\
-                xp[fs_size * asics_shape[1] - 1,0] - xp[0, 0],\
-                yp[fs_size * asics_shape[1] - 1,0] - yp[0, 0],\
-                zp[fs_size * asics_shape[1] - 1,0] - zp[0, 0]))
+                xp[ss_size * asics_shape[0] - 1,0] - xp[0, 0],\
+                yp[ss_size * asics_shape[0] - 1,0] - yp[0, 0],\
+                zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
             for a in range(nasics):
                 if nasics == 1:
                     arow = 0
