@@ -553,7 +553,7 @@ class PsanaToPyFAI:
     
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
-        corner_array = self.pixel_centers_to_corners(in_file=in_file)
+        corner_array = self.get_corner_array(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
 
     def pixel_centers_to_corners(self, in_file):
@@ -591,7 +591,6 @@ class PsanaToPyFAI:
                 dx_axis0 = np.abs(np.diff(x_asic, axis=0)).mean()
                 dx_axis1 = np.abs(np.diff(x_asic, axis=1)).mean()
                 x_axis = 0 if dx_axis0 > dx_axis1 else 1
-                y_axis = 1 - x_axis  # opposite axis
                 
                 # Calculate half-steps according to panel orientation
                 if x_axis == 0:
@@ -640,34 +639,26 @@ class PsanaToPyFAI:
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
-        x, y, z = x*1e-6, y*1e-6, z*1e-6
-        geo1 = geo.get_seg_geo() # GeometryObject
-        seg = geo1.algo # object of the SegmentGeometry subclass
-        nmods = self.detector.n_modules
+        x, y, z = self.psana_to_pyfai(x, y, z)
+        npanels = self.detector.n_modules
         nasics = self.detector.n_asics
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
-        # Flattened ss dim, fs dim, 4 corners, 3 coordinates (x, y, z)
-        pyfai_fmt = np.zeros([nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
-        for n in range(nmods):
-            arows, acols = seg.asic_rows_cols()
-            pix_size = seg.pixel_scale_size()
-            res = 1e6/pix_size
-            xn = x[n, :]
-            yn = y[n, :]
-            zn = z[n, :]
-            for a,(r0,c0) in enumerate(seg.asic0indices()):
-                vfs = np.array((\
-                    xn[r0,c0+acols-1] - xn[r0,c0],\
-                    yn[r0,c0+acols-1] - yn[r0,c0],\
-                    zn[r0,c0+acols-1] - zn[r0,c0]))
-                vss = np.array((\
-                    xn[r0+arows-1,c0] - xn[r0,c0],\
-                    yn[r0+arows-1,c0] - yn[r0,c0],\
-                    zn[r0+arows-1,c0] - zn[r0,c0]))
-                nfs = vfs/np.linalg.norm(vfs)
-                nss = vss/np.linalg.norm(vss)
+        pixel_corners = np.zeros([npanels * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
+        for p in range(npanels):
+            xp = x[p, :]
+            yp = y[p, :]
+            zp = z[p, :]
+            vfs = np.array((\
+                xp[0, ss_size * asics_shape[0] - 1] - xp[0, 0],\
+                yp[0, ss_size * asics_shape[0] - 1] - yp[0, 0],\
+                zp[0, ss_size * asics_shape[0] - 1] - zp[0, 0]))
+            vss = np.array((\
+                xp[fs_size * asics_shape[1] - 1,0] - xp[0, 0],\
+                yp[fs_size * asics_shape[1] - 1,0] - yp[0, 0],\
+                zp[fs_size * asics_shape[1] - 1,0] - zp[0, 0]))
+            for a in range(nasics):
                 if nasics == 1:
                     arow = 0
                     acol = 0
@@ -676,27 +667,23 @@ class PsanaToPyFAI:
                     acol = a % (nasics//2)
                 fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
                 ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
-                slab_offset = n * asics_shape[0] * ss_size
+                slab_offset = p * asics_shape[0] * ss_size
                 fs_portion_slab = slice(acol * fs_size, (acol + 1) * fs_size)
                 ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
-                ssx, ssy, ssz = np.array(nss) / res
-                fsx, fsy, fsz = np.array(nfs) / res
-                xna = x[n, ss_portion, fs_portion]
-                yna = y[n, ss_portion, fs_portion]
-                zna = z[n, ss_portion, fs_portion]
+                ssx, ssy, ssz = np.array(vss)
+                fsx, fsy, fsz = np.array(vfs)
+                xasic = x[p, ss_portion, fs_portion]
+                yasic = y[p, ss_portion, fs_portion]
+                zasic = z[p, ss_portion, fs_portion]
                 ss_units = np.array([0, 1, 1, 0])
                 fs_units = np.array([0, 0, 1, 1])
-                xnac = xna[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
-                ynac = yna[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
-                znac = zna[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                if len(np.unique(znac))==1:
-                    znac = np.zeros_like(znac)
-                else:
-                    znac -= np.mean(znac)
-                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 0] = znac
-                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 1] = ynac
-                pyfai_fmt[ss_portion_slab, fs_portion_slab, :, 2] = xnac
-        return pyfai_fmt
+                x = xasic[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
+                y = yasic[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
+                z = zasic[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 0] = z
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 1] = x
+                pixel_corners[ss_portion_slab, fs_portion_slab, :, 2] = y
+        return pixel_corners
 
 class PyFAIToCrystFEL:
     """
