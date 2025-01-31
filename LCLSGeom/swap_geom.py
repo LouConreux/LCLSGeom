@@ -553,73 +553,8 @@ class PsanaToPyFAI:
     
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
-        corner_array = self.get_corner_array(in_file=in_file)
+        corner_array = self.get_pixel_corners(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
-
-    def pixel_centers_to_corners(self, in_file):
-        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
-        top = geo.get_top_geo()
-        child = top.get_list_of_children()[0]
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
-        x, y, z = self.psana_to_pyfai(x, y, z)
-        nmods = self.detector.n_modules
-        nasics = self.detector.n_asics
-        asics_shape = self.detector.asics_shape
-        fs_size = self.detector.fs_size
-        ss_size = self.detector.ss_size
-        corners = np.zeros([nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
-
-        for p in range(nmods):
-            for asic in range(nasics):
-                if nasics == 1:
-                    arow = 0
-                    acol = 0
-                else:
-                    arow = asic // (nasics//2)
-                    acol = asic % (nasics//2)
-                fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
-                ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
-                slab_offset = p * asics_shape[0] * ss_size
-                ss_portion_slab = slice(arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset)
-                
-                # Extract current ASIC coordinates
-                x_asic = x[p, ss_portion, fs_portion]
-                y_asic = y[p, ss_portion, fs_portion]
-                z_asic = z[p, ss_portion, fs_portion]
-                
-                # Determine panel orientation by checking coordinate gradients
-                dx_axis0 = np.abs(np.diff(x_asic, axis=0)).mean()
-                dx_axis1 = np.abs(np.diff(x_asic, axis=1)).mean()
-                x_axis = 0 if dx_axis0 > dx_axis1 else 1
-                
-                # Calculate half-steps according to panel orientation
-                if x_axis == 0:
-                    dx = np.diff(x_asic, axis=0, append=(2*x_asic[-1:,:]-x_asic[-2:-1,:])) / 2
-                    dy = np.diff(y_asic, axis=1, append=(2*y_asic[:,-1:]-y_asic[:,-2:-1])) / 2
-                else:
-                    dx = np.diff(x_asic, axis=1, append=(2*x_asic[:,-1:]-x_asic[:,-2:-1])) / 2
-                    dy = np.diff(y_asic, axis=0, append=(2*y_asic[-1:,:]-y_asic[-2:-1,:])) / 2
-                
-                # Top-left corner (0)
-                corners[ss_portion_slab, fs_portion, 0, 0] = z_asic       # z coordinate = dim0
-                corners[ss_portion_slab, fs_portion, 0, 1] = x_asic - dx  # x coordinate = dim1 = slow-scan dim
-                corners[ss_portion_slab, fs_portion, 0, 2] = y_asic - dy  # y coordinate = dim2 = fast-scan dim
-                
-                # Top-right corner (1)
-                corners[ss_portion_slab, fs_portion, 1, 0] = z_asic
-                corners[ss_portion_slab, fs_portion, 1, 1] = x_asic - dx
-                corners[ss_portion_slab, fs_portion, 1, 2] = y_asic + dy
-                
-                # Bottom-right corner (2)
-                corners[ss_portion_slab, fs_portion, 2, 0] = z_asic
-                corners[ss_portion_slab, fs_portion, 2, 1] = x_asic + dx
-                corners[ss_portion_slab, fs_portion, 2, 2] = y_asic + dy
-                
-                # Bottom-left corner (3)
-                corners[ss_portion_slab, fs_portion, 3, 0] = z_asic
-                corners[ss_portion_slab, fs_portion, 3, 1] = x_asic + dx
-                corners[ss_portion_slab, fs_portion, 3, 2] = y_asic - dy
-        return corners
     
     def psana_to_pyfai(self, x, y, z):
         """
@@ -634,7 +569,7 @@ class PsanaToPyFAI:
             z -= np.mean(z)
         return -x, y, -z
 
-    def get_corner_array(self, in_file):
+    def get_pixel_corners(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
