@@ -310,7 +310,7 @@ class CrystFELToPyFAI:
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
         parser = self.parse_CrystFEL(in_file=in_file)
         pix_pos = self.get_pixel_coordinates(parser=parser)
-        corner_array = self.get_corner_array(pix_pos=pix_pos, parser=parser)
+        corner_array = self.get_pixel_corners(pix_pos=pix_pos, parser=parser)
         self.detector.set_pixel_corners(ary=corner_array)
 
     def parse_CrystFEL(self, in_file: str):
@@ -479,7 +479,7 @@ class CrystFELToPyFAI:
             pix_pos[:, :, :, 2] -= np.mean(pix_pos[:, :, :, 2])
         return pix_pos
 
-    def get_corner_array(self, pix_pos, parser):
+    def get_pixel_corners(self, pix_pos, parser):
         """
         Convert to the corner array needed by PyFAI
 
