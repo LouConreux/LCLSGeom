@@ -9,6 +9,8 @@ from PSCalib.GeometryAccess import GeometryAccess
 from PSCalib.SegGeometryStore import sgs
 import PSCalib.GlobalUtils as gu
 
+pyFAI.use_opencl = False
+
 DETTYPE_TO_PARS = {
     'epix10k2m': ('EPIX10KA:V2','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
                             'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0'),
