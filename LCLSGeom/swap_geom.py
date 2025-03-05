@@ -527,7 +527,7 @@ class CrystFELToPyFAI:
 
 class PyFAIToPsana:
     """
-    Class to convert psana .data geometry files to CrystFEL .geom geometry files in the desired reference frame by using intermediate CrystFEL .geom files
+    Class to convert PyFAI Detector instance to psana .data geometry files by using intermediate CrystFEL .geom files 
 
     Parameters
     ----------
