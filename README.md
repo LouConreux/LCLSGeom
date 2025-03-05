@@ -140,25 +140,21 @@ These parameters in fact define the translations and rotations that need to be a
 
 Hence, once finally optimized, the correct geometry is obtained through adequate translations and rotations. Applying those to the uncalibrated X, Y, Z coordinates, we can then write a new _CrystFEL_ .geom file, and finally write a new _psana_ .data file thanks to the PSCalib code.
 
-"La boucle est bouclée", the circle is complete in French!
-
 # Organization
 
 The package structure is organized as follows:
 
 ```
-LCLS/
-├── src/ # Main package
+LCLSGeom/
+├── LCLSGeom/ # Main Package
 │ ├── init.py # Package initialization
-│ ├── swap_geom.py # Main module
-├── tests/ # Unit tests
-│ ├── init.py # Test package initialization
-│ ├── test_swap_geom.py # Tests for main module
-│ ├── data/ # Geometry files for tests
-│   ├── ePix10k2M_0-end.data # psana file for ePix10k2M (mfxx49820)
-│   ├── Jungfrau4M_0-end.data # psana file for Jungfrau4M (cxil1015922)
-│   └── Rayonix_0-end.data # psana file for Rayonix (mfxl1015222)
-│ ├── figs/ # Figures for visual verification of tests
+│ ├── swap_geom.py # Conversion Module
+│ ├── geometry.py  # Geometric and Trigonometric Utils
+│ ├── detector.py  # Detector Definition
+│ ├── calib.py     # Calibration Path Utils
+│ ├── templates/   # Template Files
+│ │ ├── Rayonix/
+│ │ │ ├── 0-end.data
 ├── LICENSE # License file
 ├── README.md # Readme file
 ├── requirements.txt # Dependencies and requirements
@@ -167,67 +163,100 @@ LCLS/
 
 # Usage
 
-The main module _swap_geom.py_ consists in four pyFAI detector definition as well as four major conversion classes. One for each conversion needed: _Psana_ to _CrystFEL_, _CrystFEL_ to _PyFAI_, _PyFAI_ to _CrystFEL_, and finally _CrystFEL_ back to _Psana_.
+The main module _swap_geom.py_ consists in the 6 conversion between the 3 discussed framework _Psana_, _CrystFEL_ and _PyFAI_.
 
-## _PsanatoCrystFEL_
+## _PsanaToCrystFEL_
 
-This class takes as input a _Psana_ geometry .data file, a path for the output _CrystFEL_ .geom file, as well as the _det_type_ for the adequate detector.
+This class takes as input a _Psana_ geometry .data file, a path for the output _CrystFEL_ .geom file
+
+### Example of Usage
+```
+in_file = 'path/to/geom/mfx/mfxx49820/0-end.data'
+out_file = 'path/to/geom/mfx/mfxx49820/r0000.geom'
+PsanatoCrystFEL(in_file=in_file, out_file=out_file)
+```
+
+## _PsanaToPyFAI
+
+This class takes as input a _Psana_ geometry .data file and the _det_type_ for the adequate detector. Additionally, one can specify a custom pixel size and shape for detector that are usually binned (e.g. Rayonix).
 At the moment, valid _det_type_ are:
 - "epix10k2M"
-- "Rayonix" or "rayonix"
+- "jungfrau1M"
 - "jungfrau4M"
+- "Rayonix" 
 - "Epix10kaQuad.{i}" where i stands for the quad index
 
 ### Example of Usage
 ```
-psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'
-output_file = 'path/to/geom/mfx/mfxx49820/r0000.geom'
-PsanatoCrystFEL(psana_file=psana_file, output_file=output_file, det_type="epix10k2M")
+in_file = 'path/to/geom/mfx/mfxx49820/0-end.data'  
+det_type = 'epix10k2M'
+pixel_size = 0.0001 # 100 microns
+shape = (16, 352, 384)
+psana_to_pyfai = PsanaToPyFAI(in_file=in_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
+detector = psana_to_pyfai.detector
 ```
 
-## _CrystFELtoPyFAI_
+## _PyFAIToCrystFEL_
 
-This class takes as input a _CrystFEL_ .geom file and the _det_type_ for the adequate detector. One could choose to use the pixel coordinates from the corresponding _Psana_ .data file by passing it to the optional argument _psana_file_. By default, the script assumes the _CrystFEL_ .geom file was written in the _Psana_ coordinate system. One can change that by passing the optional argument _cframe_ from 0 (_Psana_) to 1 (_Lab_ coordinates).
+This class takes as input a _Detector_ PyFAI object _detector_, the 6 geometric parameters _params_ where the result of the optimization are stored, any _Psana_ .data file to access the necessary segmentation infos of the detector, and a path for the _CrystFEL_ .geom file _out_file_.
+
+### Example of Usage
+```
+in_file = 'path/to/geom/mfx/mfxx49820/0-end.data'  
+det_type = 'epix10k2M'
+pixel_size = 0.0001 # 100 microns
+shape = (16, 352, 384)
+psana_to_pyfai = PsanaToPyFAI(in_file=in_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
+detector = psana_to_pyfai.detector
+...
+Optimization
+...
+params = optimizer.result
+geom_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
+PyFAIToCrystFEL(detector=detector, params=params, psana_file=in_file, out_file=geom_file)
+```
+
+## _CrystFELToPsana_
+
+This class takes as input a _CrystFEL_ .geom file, a valid _det_type_ and a path for the _output_file_. Additionally, one can specify a custom pixel size and shape for detector that are usually binned (e.g. Rayonix).
 At the moment, valid _det_type_ are:
 - "epix10k2M"
-- "Rayonix" or "rayonix"
+- "jungfrau1M"
 - "jungfrau4M"
-- "Epix10kaQuad.{i}" where i stands for the quad index
-
-### Example of Usage
-```
-psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'  # Optional
-geom_file = 'path/to/geom/mfx/mfxx49820/r0000.geom'
-converter = CrystFELtoPyFAI(geom_file=geom_file, det_type="epix10k2M", psana_file=None, cframe=0)
-pixel_array = converter.pix_pos   # Pixel coordinates fed to pyFAI
-epix10k2M = converter.detector    # PyFAI Detector Object with correct pixel corner array
-```
-
-## _PyFAItoCrystFEL_
-
-This class takes as input a _SingleGeometry_ PyFAI object _sg_, where the result of the optimization is stored, any _Psana_ .data file to access the necessary segmentation infos of the detector, the initial pixel coordinates _pixel_array_ that was fed to PyFAI, and a path for the _CrystFEL_ .geom file _output_file_.
-
-### Example of Usage
-```
-psana_file = 'path/to/geom/mfx/mfxx49820/0-end.data'
-pixel_array = CrystFELtoPyFAI_converter.pix_pos
-output_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
-PyFAItoCrystFEL(sg=sg, psana_file=psana_file, pixel_array=pixel_array, output_file=output_file)
-```
-
-## _CrystFELtoPsana_
-
-This class takes as input a _CrystFEL_ .geom file, a valid _det_type_ and a path for the _output_file_. However, at the moment, PSCalib converter code is only implemented for certain detectors.
-Valid det_types are:
-- "epix10ka"
-- "jungfrau"
 - "cspad"
 - "cspadv2"
 - "pnccd"
+- "Rayonix
+- "Epix10kaQuad.{i}" where i stands for the quad index
 
 ### Example of Usage
 ```
+Optimization
+...
+params = optimizer.result
 geom_file = 'path/to/geom/mfx/mfxx49820/r0008.geom'
-output_file = 'path/to/geom/mfx/mfxx49820/r0008.data'
-CrystFELtoPsana(geom_file=geom_file, det_type='epix10ka', output_file=output_file)
+psana_file = 'path/to/geom/mfx/mfxx49820/8-end.data'
+PyFAIToCrystFEL(detector=detector, params=params, psana_file=in_file, out_file=geom_file)
+CrystFELToPsana(in_file=geom_file, det_type=det_type, out_file=psana_file, pixel_size=pixel_size, shape=shape)
 ```
+
+## _PyFAIToPsana_
+
+This class converts _PyFAI_ Detector instance to _Psana_ .data geometry files by using intermediate _CrystFEL_ .geom files 
+This class calls successively _PyFAIToCrystFEL_ then _CrystFELToPsana_.
+This class takes as input a _Detector_ PyFAI object _detector_, the 6 geometric parameters _params_ where the result of the optimization are stored, any _Psana_ .data file to access the necessary segmentation infos of the detector, and a path for the _Psana_ .data file _out_file_.
+
+## _CrystFELToPyFAI_
+
+This class converts _CrystFEL_ .geom geometry files to _PyFAI_ Detector instance by using intermediate _Psana_ .data files.
+This class calls successively _CrystFELToPsana_ then _PsanaToPyFAI_.
+This class takes as input a _CrystFEL_ .geom file, a valid _det_type_. Additionally, one can specify a custom pixel size and shape for detector that are usually binned (e.g. Rayonix).
+At the moment, valid _det_type_ are:
+- "epix10k2M"
+- "jungfrau1M"
+- "jungfrau4M"
+- "cspad"
+- "cspadv2"
+- "pnccd"
+- "Rayonix
+- "Epix10kaQuad.{i}" where i stands for the quad index
