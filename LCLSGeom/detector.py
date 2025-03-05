@@ -17,6 +17,7 @@ class ePix10k2M(Detector):
             pixel_size = 0.0001
         if shape is None:
             shape = (16, 352, 384)
+        self.det_type = "epix10k2M"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
@@ -28,7 +29,7 @@ class ePix10k2M(Detector):
 
 class ePix10kaQuad(Detector):
     """
-    PyFAI Detector instance for the ePix100
+    PyFAI Detector instance for the ePix10kaQuad
     """
 
     def __init__(
@@ -43,6 +44,7 @@ class ePix10kaQuad(Detector):
             pixel_size = 0.0001
         if shape is None:
             shape = (4, 352, 384)
+        self.det_type = "epix10kaQuad"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
@@ -69,6 +71,7 @@ class Jungfrau1M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (4, 512, 1024)
+        self.det_type = "jungfrau1M"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
@@ -95,6 +98,7 @@ class Jungfrau4M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (8, 512, 1024)
+        self.det_type = "jungfrau4M"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics
@@ -122,6 +126,7 @@ class Rayonix(Detector):
             pixel_size = 0.000176
         if shape is None:
             shape = (1920, 1920)
+        self.det_type = "Rayonix"
         self.raw_shape = shape
         self.n_modules = 1
         self.n_asics = n_asics

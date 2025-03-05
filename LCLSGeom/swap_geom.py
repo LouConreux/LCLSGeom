@@ -1,8 +1,10 @@
+import os
 import sys
 import numpy as np
 from math import atan2, degrees
 import pyFAI
 from .detector import get_detector
+from .calib import det_type_to_pars
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.GeometryAccess import GeometryAccess
 from PSCalib.SegGeometryStore import sgs
@@ -50,253 +52,6 @@ class PsanaToCrystFEL:
             f = open(out_file,'w')
             f.write(txt)
             f.close()
-
-class CrystFELToPyFAI:
-    """
-    Class to convert a CrystFEL .geom geometry file to a PyFAI Detector instance with the correct pixel corners
-
-    Parameters
-    ----------
-    in_file : str
-        Path to the CrystFEL .geom file
-    det_type : str
-        Detector type
-    pixel_size : float
-        Pixel size in meters
-    shape : tuple
-        Detector shape (n_modules, ss_size, fs_size)
-    cframe : int
-        Frame reference to convert to PyFAI format
-        0 = psana frame, 1 = lab frame
-    """
-
-    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
-        self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
-        parser = self.parse_CrystFEL(in_file=in_file)
-        pix_pos = self.get_pixel_coordinates(parser=parser)
-        corner_array = self.get_pixel_corners(pix_pos=pix_pos, parser=parser)
-        self.detector.set_pixel_corners(ary=corner_array)
-
-    def parse_CrystFEL(self, in_file: str):
-        """
-        Parse a CrystFEL geometry file
-        Read a text ".geom" file and return the dictionary of geometry components
-
-        Parameters
-        ----------
-        fname : str
-            Path to the CrystFEL geometry file
-        """
-        parser = {
-            "panels": {},
-            "rigid_groups": {},
-            "rigid_group_collections": {},
-        }
-        with open(in_file, "r") as f:
-            lines = f.readlines()
-            for line in lines:
-                # Remove comments
-                if line[0] == ";":
-                    continue
-                if "=" not in line:
-                    continue
-                fmt_line = line.strip()
-                # CrystFEL fmt: object = val
-                obj_value = line.split("=")
-                # object fmt: "panel/parameter"
-                obj = obj_value[0].split("/")  # May be len 1 or 2
-                value = obj_value[1]
-                if len(obj) == 1:  # e.g. rigid_group_quad ...
-                    if "collection" in obj[0].strip():
-                        collection_name = obj[0].strip().split("_")[-1]
-                        parser["rigid_group_collections"][
-                            collection_name
-                        ] = value.strip().split(",")
-                    else:
-                        group_name = obj[0].strip().split("_")[-1]
-                        parser["rigid_groups"][group_name] = value.strip().split(",")
-                elif len(obj) == 2:  # e.g. p0a0/fs = ...
-                    pname = obj[0].strip()
-                    if pname in parser["panels"]:
-                        panel = parser["panels"][pname]
-                    else:
-                        panel = {
-                            "fs": (0, 0, 0),
-                            "ss": (0, 0, 0),
-                            "res": 10000,
-                            "corner_x": 100,
-                            "corner_y": 100,
-                            "coffset": 0.1,
-                            "min_fs": 0,
-                            "max_fs": 123,
-                            "min_ss": 0,
-                            "max_ss": 123,
-                            "no_index": 0,
-                        }
-                        parser["panels"][pname] = panel
-                    if "fs" in obj[1].strip()[-2:]:
-                        if "max" in obj[1]:
-                            panel["max_fs"] = int(value)
-                        elif "min" in obj[1]:
-                            panel["min_fs"] = int(value)
-                        else:
-                            strcoords = value.split()
-                            if "z" in strcoords:
-                                # -1x -2y -3z
-                                fcoords = (
-                                    float(strcoords[0].strip("x")),
-                                    float(strcoords[1].strip("y")),
-                                    float(strcoords[2].strip("z")),
-                                )
-                                panel["fs"] = fcoords
-                            else:
-                                # -1x -2y
-                                fcoords = (
-                                    float(strcoords[0].strip("x")),
-                                    float(strcoords[1].strip("y")),
-                                    0.0,
-                                )
-                                panel["fs"] = fcoords
-                    elif "ss" in obj[1].strip()[-2:]:
-                        if "max" in obj[1]:
-                            panel["max_ss"] = int(value)
-                        elif "min" in obj[1]:
-                            panel["min_ss"] = int(value)
-                        else:
-                            strcoords = value.split()
-                            if "z" in strcoords:
-                                # -1x -2y -3z
-                                fcoords = (
-                                    float(strcoords[0].strip("x")),
-                                    float(strcoords[1].strip("y")),
-                                    float(strcoords[2].strip("z")),
-                                )
-                                panel["ss"] = fcoords
-                            else:
-                                # -1x -2y
-                                fcoords = (
-                                    float(strcoords[0].strip("x")),
-                                    float(strcoords[1].strip("y")),
-                                    0.0,
-                                )
-                                panel["ss"] = fcoords
-                    elif "res" in obj[1].strip():
-                        panel["res"] = float(value)
-                    elif "corner" in obj[1].strip():
-                        if "x" in obj[1]:
-                            panel["corner_x"] = float(value)
-                        elif "y" in obj[1]:
-                            panel["corner_y"] = float(value)
-                    elif "no_index" in obj[1]:
-                        panel["no_index"] = int(value)
-                    elif "coffset" in obj[1]:
-                        panel["coffset"] = float(value)
-            return parser
-
-    def get_pixel_coordinates(self, parser: dict):
-        """
-        From a parsed CrystFEL .geom file, returns the pixel positions
-
-        Parameters
-        ----------
-        parser : dict
-            Dictionary of geometry inputs from a CrystFEL geometry file
-        """
-        nmods = self.detector.n_modules
-        nasics = self.detector.n_asics
-        asics_shape = self.detector.asics_shape
-        fs_size = self.detector.fs_size
-        ss_size = self.detector.ss_size
-        pix_pos = np.zeros([nmods, ss_size * asics_shape[0], fs_size * asics_shape[1], 3])
-        for p in range(nmods):
-            pname = f"p{p}"
-            for asic in range(nasics):
-                asicname = f"a{asic}"
-                full_name = pname + asicname
-                if nasics == 1:
-                    arow = 0
-                    acol = 0
-                else:
-                    arow = asic // (nasics//2)
-                    acol = asic % (nasics//2)
-                ss_portion = slice(arow * ss_size, (arow + 1) * ss_size)
-                fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
-                res = parser["panels"][full_name]["res"]
-                corner_x = parser["panels"][full_name]["corner_x"] / res
-                corner_y = parser["panels"][full_name]["corner_y"] / res
-                corner_z = parser["panels"][full_name]["coffset"]
-                # Get tile vectors for ss and fs directions
-                ssx, ssy, ssz = np.array(parser["panels"][full_name]["ss"]) / res
-                fsx, fsy, fsz = np.array(parser["panels"][full_name]["fs"]) / res
-                coords_ss, coords_fs = np.meshgrid(
-                    np.arange(0, ss_size), np.arange(0, fs_size), indexing="ij"
-                )
-                x = corner_x + ssx * coords_ss + fsx * coords_fs
-                y = corner_y + ssy * coords_ss + fsy * coords_fs
-                z = corner_z + ssz * coords_ss + fsz * coords_fs
-                pix_pos[p, ss_portion, fs_portion, 0] = x
-                pix_pos[p, ss_portion, fs_portion, 1] = y
-                pix_pos[p, ss_portion, fs_portion, 2] = z
-        if len(np.unique(pix_pos[:, :, :, 2])) == 1:
-            pix_pos[:, :, :, 2] = 0
-        else:
-            pix_pos[:, :, :, 2] -= np.mean(pix_pos[:, :, :, 2])
-        return pix_pos
-
-    def get_pixel_corners(self, pix_pos, parser):
-        """
-        Convert to the corner array needed by PyFAI
-
-        Parameters
-        ----------
-        pix_pos : np.ndarray
-            Pixel positions in .geom reference frame
-        parser : dict
-            Dictionary of geometry inputs from a CrystFEL geometry file
-        cframe : int
-            Frame reference to convert to PyFAI format
-            0 = psana frame, 1 = lab frame
-        """
-        nmods = self.detector.n_modules
-        nasics = self.detector.n_asics
-        asics_shape = self.detector.asics_shape
-        fs_size = self.detector.fs_size
-        ss_size = self.detector.ss_size
-        pixcorner = pix_pos.reshape(nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 3)
-        cx, cy, cz = np.moveaxis(pixcorner, -1, 0)
-        # Flattened ss dim, fs dim, 4 corners, 3 coordinates (x, y, z)
-        pyfai_fmt = np.zeros([nmods * ss_size * asics_shape[0], fs_size * asics_shape[1], 4, 3])
-        for p in range(nmods):
-            pname = f"p{p}"
-            for asic in range(nasics):
-                full_name = f"{pname}a{asic}"
-                if nasics == 1:
-                    arow = 0
-                    acol = 0
-                else:
-                    arow = asic // (nasics//2)
-                    acol = asic % (nasics//2)
-                slab_offset = p * asics_shape[0] *ss_size
-                ss_portion = slice(
-                    arow * ss_size + slab_offset, (arow + 1) * ss_size + slab_offset
-                )
-                fs_portion = slice(acol * fs_size, (acol + 1) * fs_size)
-                # Get tile vectors for ss and fs directions
-                res = parser["panels"][full_name]["res"]
-                ssx, ssy, ssz = np.array(parser["panels"][full_name]["ss"]) / res
-                fsx, fsy, fsz = np.array(parser["panels"][full_name]["fs"]) / res
-                c1x = cx[ss_portion, fs_portion]
-                c1y = cy[ss_portion, fs_portion]
-                c1z = cz[ss_portion, fs_portion]
-                ss_units = np.array([0, 1, 1, 0])
-                fs_units = np.array([0, 0, 1, 1])
-                x = c1x[:, :, np.newaxis] + ss_units * ssx + fs_units * fsx
-                y = c1y[:, :, np.newaxis] + ss_units * ssy + fs_units * fsy
-                z = c1z[:, :, np.newaxis] + ss_units * ssz + fs_units * fsz
-                pyfai_fmt[ss_portion, fs_portion, :, 0] = z
-                pyfai_fmt[ss_portion, fs_portion, :, 1] = y
-                pyfai_fmt[ss_portion, fs_portion, :, 2] = x
-        return pyfai_fmt
 
 class PsanaToPyFAI:
     """
@@ -744,5 +499,51 @@ class CrystFELToPsana:
             pixel_size_um = pixel_size*1e6
             pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{int(pixel_size_um)}:{int(pixel_size_um)}', 'p0a0')
         else:
-            pars = DETTYPE_TO_PARS.get(det_type, None)
+            pars = det_type_to_pars.get(det_type, None)
         self.geom_to_data(pars, det_type, out_file)
+
+class CrystFELToPyFAI:
+    """
+    Class to convert CrystFEL .geom geometry files to PyFAI Detector instance by using intermediate psana .data files
+
+    Parameters
+    ----------
+    in_file : str
+        Path to the CrystFEL .geom file
+    det_type : str
+        Detector type
+    pixel_size : float
+        Pixel size in meters
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
+    """
+    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
+        path = os.path.dirname(in_file)
+        data_file = os.path.join(path, "temp.data")
+        CrystFELToPsana(in_file=in_file, det_type=det_type, out_file=data_file, pixel_size=pixel_size, shape=shape)
+        psana_to_pyfai = PsanaToPyFAI(in_file=data_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
+        self.detector = psana_to_pyfai.detector
+        os.remove(data_file)
+
+class PyFAIToPsana:
+    """
+    Class to convert psana .data geometry files to CrystFEL .geom geometry files in the desired reference frame by using intermediate CrystFEL .geom files
+
+    Parameters
+    ----------
+    detector : PyFAI detector instance
+        PyFAI detector instance
+    params : list
+        Detector parameters found by PyFAI calibration
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
+    out_file : str
+        Path to the output .psana file
+    """
+
+    def __init__(self, detector, params, psana_file, out_file):
+        path = os.path.dirname(out_file)
+        geom_file = os.path.join(path, "temp.geom")
+        PyFAIToCrystFEL(detector=detector, params=params, psana_file=psana_file, out_file=geom_file)
+        CrystFELToPsana(in_file=geom_file, det_type=detector.det_type, out_file=out_file, pixel_size=detector.pixel_size, shape=detector.raw_shape)
+        os.remove(geom_file)
