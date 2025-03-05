@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from math import atan2, degrees
 import pyFAI
-from detector import get_detector
+from .detector import get_detector
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.GeometryAccess import GeometryAccess
 from PSCalib.SegGeometryStore import sgs
