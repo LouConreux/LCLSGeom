@@ -383,7 +383,7 @@ class CrystFELToPsana:
         '\n# EXPERIMENT N/A'\
         +'\n%s' % comments\
         +'\n#'\
-        '\n# HDR PARENT IND        OBJECT IND     X0[um]   Y0[um]   Z0[um]   ROT-Z ROT-Y ROT-X     TILT-Z   TILT-Y   TILT-X'
+        '\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'
 
     def _parse_line_as_parameter(self, line):
         assert isinstance(line, str), 'line is not a str object'
