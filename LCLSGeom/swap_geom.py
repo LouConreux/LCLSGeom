@@ -482,11 +482,11 @@ class CrystFELToPsana:
             angle_deg = degrees(atan2(uf[1],uf[0]))
             angle_z, tilt_z = CrystFELToPsana.angle_and_tilt(angle_deg)
             tilt_x, tilt_y = CrystFELToPsana.tilt_xy(uf,us,i,k)
-            recs += '\nDET:VC         0  %12s  %2d' % (segname, i)\
-                + '   %8d %8d %8d %7.0f     0     0   %8.5f %8.5f %8.5f'%\
+            recs += '\n      CAMERA  0 %12s %2d' %(segname, i)\
+                +'  %8d %8d %8d %7.0f      0      0   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
-        recs += '\nIP             0    DET:VC       0          0        0'\
-                ' %8d       0     0     0    0.00000  0.00000  0.00000' % (zoffset_m*M_TO_UM)
+        recs += '\n          IP  0       CAMERA  0         0        0'\
+                ' %8d       0      0      0    0.00000   0.00000   0.00000' % (zoffset_m*M_TO_UM)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
