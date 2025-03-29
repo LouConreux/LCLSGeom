@@ -2,20 +2,11 @@ import os
 import re
 
 det_type_to_pars = {
-    'epix10k2m': ('EPIX10KA:V1','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
-                            'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0'),
-    'epix10kaquad': ('EPIX10KA:V1','p0a0,p1a0,p2a0,p3a0'),
-    'jungfrau1m': ('JUNGFRAU:V1','p0a0,p1a0'),
-    'jungfrau4m': ('JUNGFRAU:V1','p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0'),
-    'cspad'   : ('SENS2X1:V1', 'p0a0,p0a2,p0a4,p0a6,p0a8,p0a10,p0a12,p0a14,'\
-                            'p1a0,p1a2,p1a4,p1a6,p1a8,p1a10,p1a12,p1a14,'\
-                            'p2a0,p2a2,p2a4,p2a6,p2a8,p2a10,p2a12,p2a14,'\
-                            'p3a0,p3a2,p3a4,p3a6,p3a8,p3a10,p3a12,p3a14'),\
-    'cspadv2' : ('SENS2X1:V1', 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
-                            'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0,'\
-                            'p16a0,p17a0,p18a0,p19a0,p20a0,p21a0,p22a0,p23a0,'\
-                            'p24a0,p25a0,p26a0,p27a0,p28a0,p29a0,p30a0,p31a0'),\
-    'pnccd'   : ('MTRX:V2:512:512:75:75', 'p0a0,p1a0,p2a0,p3a0'),\
+    'epix10k2m': 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,'\
+                            'p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0',
+    'epix10kaquad': 'p0a0,p1a0,p2a0,p3a0',
+    'jungfrau1m': 'p0a0,p1a0',
+    'jungfrau4m': 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0',
 }
 
 calib_groups = (
@@ -197,7 +188,7 @@ def source_from_det_info(det_type: str, hutch: str) -> str:
         raise ValueError(f"Unknown detector type: {det_type}")
     return f"{station}:{det_name}.0"
 
-def fetch_template(exp, det_type, src, pixel_size=None, shape=None):
+def fetch_template(exp, det_type, src, pixel_size, shape):
     """
     Pick the appropriate psana format template based on the detector type
     Parameters pixel size, and shape are required for the Rayonix detector
@@ -226,7 +217,7 @@ def fetch_template(exp, det_type, src, pixel_size=None, shape=None):
 
     if det_type.lower() == "rayonix":
         for i, line in enumerate(content):
-            if "MTRX:V2" in line and shape is not None and pixel_size is not None:
+            if "MTRX:V2" in line:
                 updated_line = re.sub(
                     r"MTRX:V2:\d+:\d+:\d+:\d+",
                     f"MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size}:{pixel_size}",

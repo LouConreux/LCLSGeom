@@ -260,14 +260,17 @@ class PyFAIToCrystFEL:
         """
         X, Y, Z = self.X, self.Y, self.Z
         geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
-        geom1 = geom.get_seg_geo() # GeometryObject
-        seg = geom1.algo # object of the SegmentGeometry subclass
+        geom1 = geom.get_seg_geo()
+        version = geom1.oname
+        seg = geom1.algo
         nsegs = int(X.size/seg.size())
-        shape = (nsegs,) + seg.shape() # (nsegs, srows, scols)
+        shape = (nsegs,) + seg.shape()
         X.shape = shape
         Y.shape = shape
         Z.shape = shape
         txt = header_crystfel()
+        txt += '\n; calib = %s' % version\
+            +'\n'
         for n in range(nsegs):
             txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
         if out_file is not None:
@@ -287,15 +290,11 @@ class CrystFELToPsana:
         Detector type
     out_file : str
         Path to the output psana .data file
-    pixel_size : float
-        Pixel size in meters
-    shape : tuple
-        Detector shape (n_modules, ss_size, fs_size)
     """
-    def __init__(self, in_file, det_type, out_file, pixel_size=None, shape=None):
+    def __init__(self, in_file, det_type, out_file):
         self.valid = False
-        self.load_geom(in_file=in_file)
-        self.convert_geom_to_data(det_type=det_type, out_file=out_file, pixel_size=pixel_size, shape=shape)
+        calib = self.load_geom(in_file=in_file)
+        self.convert_geom_to_data(det_type=det_type, calib=calib, out_file=out_file)
 
     @staticmethod
     def str_to_int_or_float(s):
@@ -366,7 +365,7 @@ class CrystFELToPsana:
             False
 
     @staticmethod
-    def header_psana(list_of_cmts=[], det_type='N/A'):
+    def header_psana(list_of_cmts=[], det_type='N/A', calib='N/A'):
         comments = '\n'.join(['# CFELCMT:%02d %s'%(i,s) for i,s in enumerate(list_of_cmts)])
         return\
         '\n# TITLE      Geometry constants converted from CrystFEL by genuine psana'\
@@ -378,8 +377,8 @@ class CrystFELToPsana:
         +'\n# RELEASE    %s' % gu.get_enviroment('CONDA_DEFAULT_ENV')\
         +'\n# CALIB_TYPE geometry'\
         +'\n# DETTYPE    %s' % det_type\
-        +'\n# DETECTOR   N/A'\
-        '\n# METROLOGY  N/A'\
+        +'\n# DETECTOR   %s' % calib\
+        +'\n# METROLOGY  N/A'\
         '\n# EXPERIMENT N/A'\
         +'\n%s' % comments\
         +'\n'\
@@ -450,25 +449,27 @@ class CrystFELToPsana:
             line = linef.strip('\n')
             if not line.strip(): continue # discard empty strings
             if line[0] == ';':            # accumulate list of comments
+                if line[1:8] == 'calib =':
+                    calib = line[9:]
                 self.list_of_comments.append(line)
                 continue
             self._parse_line_as_parameter(line)
         f.close()
         self.valid = True
+        return calib
 
-    def geom_to_data(self, pars, det_type, out_file):
-        segname, panasics = pars
+    def geom_to_data(self, segname, panelasics, det_type, out_file):
         sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
-        X,Y,Z = sg.pixel_coord_array()
+        X, Y, Z = sg.pixel_coord_array()
         PIX_SIZE_UM = sg.get_pix_size_um()
         M_TO_UM = 1e6
         xc0, yc0, zc0 = X[0,0], Y[0,0], Z[0,0]
         zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
-        recs = CrystFELToPsana.header_psana(list_of_cmts=self.list_of_comments, det_type=det_type)
-        segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panasics.split(',')])
+        recs = CrystFELToPsana.header_psana(list_of_cmts=self.list_of_comments, det_type=det_type, calib=segname)
+        segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panelasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
         zoffset_m += meanroundz
-        for i,k in enumerate(panasics.split(',')):
+        for i,k in enumerate(panelasics.split(',')):
             dicasic = self.dict_of_pars[k]
             uf = np.array(dicasic.get('fs', None), dtype=np.float64) # unit vector f
             us = np.array(dicasic.get('ss', None), dtype=np.float64) # unit vector s
@@ -492,16 +493,15 @@ class CrystFELToPsana:
         f.write(recs)
         f.close()
 
-    def convert_geom_to_data(self, det_type, out_file, pixel_size=None, shape=None):
+    def convert_geom_to_data(self, det_type, calib, out_file):
         det_type_lower = det_type.lower()
         if "epix10kaquad" in det_type_lower:
             det_type_lower = "epix10kaquad"
         elif det_type_lower == "rayonix":
-            pixel_size_um = pixel_size*1e6
-            pars = (f'MTRX:V2:{shape[0]}:{shape[1]}:{int(pixel_size_um)}:{int(pixel_size_um)}', 'p0a0')
+            panelasics = 'p0a0'
         else:
-            pars = det_type_to_pars.get(det_type_lower, None)
-        self.geom_to_data(pars, det_type, out_file)
+            panelasics = det_type_to_pars.get(det_type_lower, None)
+        self.geom_to_data(calib, panelasics, det_type, out_file)
 
 class CrystFELToPyFAI:
     """
