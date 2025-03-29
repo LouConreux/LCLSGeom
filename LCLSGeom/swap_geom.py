@@ -261,7 +261,7 @@ class PyFAIToCrystFEL:
         X, Y, Z = self.X, self.Y, self.Z
         geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
         geom1 = geom.get_seg_geo()
-        version = geom1.oname
+        calib = geom1.oname
         seg = geom1.algo
         nsegs = int(X.size/seg.size())
         shape = (nsegs,) + seg.shape()
@@ -269,7 +269,7 @@ class PyFAIToCrystFEL:
         Y.shape = shape
         Z.shape = shape
         txt = header_crystfel()
-        txt += '\n; calib = %s' % version\
+        txt += '\n; calib = %s' % calib\
             +'\n'
         for n in range(nsegs):
             txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
@@ -293,8 +293,8 @@ class CrystFELToPsana:
     """
     def __init__(self, in_file, det_type, out_file):
         self.valid = False
-        calib = self.load_geom(in_file=in_file)
-        self.convert_geom_to_data(det_type=det_type, calib=calib, out_file=out_file)
+        self.load_geom(in_file=in_file)
+        self.convert_geom_to_data(det_type=det_type, out_file=out_file)
 
     @staticmethod
     def str_to_int_or_float(s):
@@ -449,14 +449,13 @@ class CrystFELToPsana:
             line = linef.strip('\n')
             if not line.strip(): continue # discard empty strings
             if line[0] == ';':            # accumulate list of comments
-                if line[1:8] == 'calib =':
-                    calib = line[9:]
+                if 'calib' in line:
+                    self.calib = line.split('=', 1)[1].strip()
                 self.list_of_comments.append(line)
                 continue
             self._parse_line_as_parameter(line)
         f.close()
         self.valid = True
-        return calib
 
     def geom_to_data(self, segname, panelasics, det_type, out_file):
         sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
@@ -493,15 +492,16 @@ class CrystFELToPsana:
         f.write(recs)
         f.close()
 
-    def convert_geom_to_data(self, det_type, calib, out_file):
+    def convert_geom_to_data(self, det_type, out_file):
         det_type_lower = det_type.lower()
         if "epix10kaquad" in det_type_lower:
             det_type_lower = "epix10kaquad"
+            panelasics = det_type_to_pars.get(det_type_lower, None)
         elif det_type_lower == "rayonix":
             panelasics = 'p0a0'
         else:
             panelasics = det_type_to_pars.get(det_type_lower, None)
-        self.geom_to_data(calib, panelasics, det_type, out_file)
+        self.geom_to_data(self.calib, panelasics, det_type, out_file)
 
 class CrystFELToPyFAI:
     """
