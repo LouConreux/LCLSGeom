@@ -46,6 +46,9 @@ calib_groups = (
     "Pixis::CalibV1",
     "Epix10ka2M::CalibV1",
     "Epix10kaQuad::CalibV1",
+    "Epix10kaQuad::CalibV1",
+    "Epix10kaQuad::CalibV1",
+    "Epix10kaQuad::CalibV1",
     "Camera::CalibV1",
     "Camera::CalibV1",
     "Camera::CalibV1",
@@ -88,7 +91,10 @@ psana_det_names = (
     "Uxi",
     "Pixis",
     "Epix10k2M",
-    "Epix10kaQuad",
+    "Epix10kaQuad.0",
+    "Epix10kaQuad.1",
+    "Epix10kaQuad.2",
+    "Epix10kaQuad.3",
     "Streak",
     "Archon",
     "iStar",
@@ -133,7 +139,10 @@ calib_det_names = (
     "Uxi",
     "Pixis",
     "Epix10ka2M",
-    "Epix10kaQuad",
+    "Epix10kaQuad.0",
+    "Epix10kaQuad.1",
+    "Epix10kaQuad.2",
+    "Epix10kaQuad.3",
     "Streak",
     "Archon",
     "iStar",
@@ -186,6 +195,8 @@ def source_from_det_info(det_type: str, hutch: str) -> str:
     det_name = psana_to_calib_det_name.get(det_type_lower, "UNDEFINED")
     if det_name == "UNDEFINED":
         raise ValueError(f"Unknown detector type: {det_type}")
+    if "Epix10kaQuad" in det_name:
+        return f"{station}:{det_name}"
     return f"{station}:{det_name}.0"
 
 def fetch_template(exp, det_type, src, pixel_size, shape):
