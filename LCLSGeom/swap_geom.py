@@ -517,7 +517,7 @@ class CrystFELToPyFAI:
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         path = os.path.dirname(in_file)
         data_file = os.path.join(path, "temp.data")
-        CrystFELToPsana(in_file=in_file, det_type=det_type, out_file=data_file, pixel_size=pixel_size, shape=shape)
+        CrystFELToPsana(in_file=in_file, det_type=det_type, out_file=data_file)
         psana_to_pyfai = PsanaToPyFAI(in_file=data_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
         self.detector = psana_to_pyfai.detector
         os.remove(data_file)
@@ -542,5 +542,5 @@ class PyFAIToPsana:
         path = os.path.dirname(out_file)
         geom_file = os.path.join(path, "temp.geom")
         PyFAIToCrystFEL(detector=detector, params=params, psana_file=psana_file, out_file=geom_file)
-        CrystFELToPsana(in_file=geom_file, det_type=detector.det_type, out_file=out_file, pixel_size=detector.pixel_size, shape=detector.raw_shape)
+        CrystFELToPsana(in_file=geom_file, det_type=detector.det_type, out_file=out_file)
         os.remove(geom_file)
