@@ -230,14 +230,14 @@ class PyFAIToCrystFEL:
         dist = self.params[0]
         poni1 = self.params[1]
         poni2 = self.params[2]
-        p1 = (p1 - poni1).ravel()
-        p2 = (p2 - poni2).ravel()
+        p1 = p1 - poni1
+        p2 = p2 - poni2
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
-            p3 = (p3+dist).ravel()
-        coord_det = np.vstack((p1, p2, p3))
-        coord_sample = np.dot(self.rotation_matrix(params), coord_det)
+            p3 = p3+dist
+        coord_det = np.stack((p1, p2, p3), axis=0)
+        coord_sample = np.tensordot(self.rotation_matrix(params), coord_det, axis=([1], [0]))
         x, y, z = coord_sample
         x, y, z = self.pyfai_to_psana(x, y, z, params)
         self.X = x
@@ -260,15 +260,14 @@ class PyFAIToCrystFEL:
         geom1 = geom.get_seg_geo()
         calib = geom1.oname
         seg = geom1.algo
-        nsegs = int(X.size/seg.size())
-        shape = (nsegs,) + seg.shape()
-        X.shape = shape
-        Y.shape = shape
-        Z.shape = shape
+        shape = self.detector.raw_shape
+        X = X.reshape(shape)
+        Y = Y.reshape(shape)
+        Z = Z.reshape(shape)
         txt = header_crystfel()
         txt += '\n; calib = %s' % calib\
             +'\n'
-        for n in range(nsegs):
+        for n in range(shape[0]):
             txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
         if out_file is not None:
             f = open(out_file,'w')
