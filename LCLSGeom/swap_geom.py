@@ -230,14 +230,14 @@ class PyFAIToCrystFEL:
         dist = self.params[0]
         poni1 = self.params[1]
         poni2 = self.params[2]
-        p1 = p1 - poni1
-        p2 = p2 - poni2
+        p1 = (p1 - poni1).ravel()
+        p2 = (p2 - poni2).ravel()
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
-            p3 = p3+dist
+            p3 = (p3+dist).ravel()
         coord_det = np.stack((p1, p2, p3), axis=0)
-        coord_sample = np.tensordot(self.rotation_matrix(params), coord_det, axes=([1], [0]))
+        coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         x, y, z = coord_sample
         x, y, z = self.pyfai_to_psana(x, y, z, params)
         self.X = x
