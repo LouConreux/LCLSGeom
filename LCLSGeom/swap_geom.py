@@ -240,12 +240,9 @@ class PyFAIToCrystFEL:
         coord_sample = np.dot(self.rotation_matrix(params), coord_det)
         x, y, z = coord_sample
         x, y, z = self.pyfai_to_psana(x, y, z, params)
-        X = np.reshape(x, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        Y = np.reshape(y, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        Z = np.reshape(z, (self.detector.n_modules, self.detector.ss_size * self.detector.asics_shape[0], self.detector.fs_size * self.detector.asics_shape[1]))
-        self.X = X
-        self.Y = Y
-        self.Z = Z
+        self.X = x
+        self.Y = y
+        self.Z = z
     
     def convert_to_geom(self, psana_file, out_file):
         """
