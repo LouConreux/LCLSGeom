@@ -92,6 +92,10 @@ class PsanaToPyFAI:
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
+        seg = geo.get_seg_geo()
+        sg = seg.algo
+        self.detector.segname = seg.oname
+        self.detector.sg = sg
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
         x, y, z = self.psana_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
@@ -151,17 +155,15 @@ class PyFAIToCrystFEL:
         PyFAI detector instance
     params : list
         Detector parameters found by PyFAI calibration
-    psana_file : str
-        Path to the psana .data file for retrieving segmentation information
     out_file : str
         Path to the output .geom file
     """
 
-    def __init__(self, detector, params, psana_file, out_file):
+    def __init__(self, detector, params, out_file):
         self.detector = detector
         self.params = params
         self.correct_geom()
-        self.convert_to_geom(psana_file=psana_file, out_file=out_file)
+        self.convert_to_geom(out_file=out_file)
 
     def rotation_matrix(self, params):
         """
@@ -244,29 +246,22 @@ class PyFAIToCrystFEL:
         self.Y = y
         self.Z = z
     
-    def convert_to_geom(self, psana_file, out_file):
+    def convert_to_geom(self, out_file):
         """
         From corrected X, Y, Z coordinates, write a CrystFEL .geom file
 
         Parameters
         ----------
-        psana_file : str
-            Path to the psana .data file for retrieving segmentation information
         output_file : str
             Path to the output .geom file
         """
         X, Y, Z = self.X, self.Y, self.Z
-        geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
-        geom1 = geom.get_seg_geo()
-        calib = geom1.oname
-        seg = geom1.algo
+        seg = self.detector.sg
         shape = self.detector.raw_shape
         X = X.reshape(shape)
         Y = Y.reshape(shape)
         Z = Z.reshape(shape)
         txt = header_crystfel()
-        txt += '\n; calib = %s' % calib\
-            +'\n'
         for n in range(shape[0]):
             txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
         if out_file is not None:
@@ -284,13 +279,15 @@ class CrystFELToPsana:
         Path to the CrystFEL .geom file
     det_type : str
         Detector type
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
     out_file : str
         Path to the output psana .data file
     """
-    def __init__(self, in_file, det_type, out_file):
+    def __init__(self, in_file, det_type, psana_file, out_file):
         self.valid = False
         self.load_geom(in_file=in_file)
-        self.convert_geom_to_data(det_type=det_type, out_file=out_file)
+        self.convert_geom_to_data(det_type=det_type, psana_file=psana_file, out_file=out_file)
 
     @staticmethod
     def str_to_int_or_float(s):
@@ -333,14 +330,6 @@ class CrystFELToPsana:
         return pitch, imax
 
     @staticmethod
-    def vector_lab_to_psana(v):
-        """
-        both-way conversion of vectors between LAB and PSANA coordinate frames
-        """
-        assert len(v)==3
-        return np.array((-v[1], -v[0], -v[2]))
-
-    @staticmethod
     def tilt_xy(uf, us, i, k):
         tilt_f, imaxf = CrystFELToPsana.unit_vector_pitch_angle_max_ind(uf)
         tilt_s, imaxs = CrystFELToPsana.unit_vector_pitch_angle_max_ind(us)
@@ -361,25 +350,68 @@ class CrystFELToPsana:
             False
 
     @staticmethod
-    def header_psana(list_of_cmts=[], det_type='N/A', calib='N/A'):
-        comments = '\n'.join(['# CFELCMT:%02d %s'%(i,s) for i,s in enumerate(list_of_cmts)])
-        return\
-        '\n# TITLE      Geometry constants converted from CrystFEL by genuine psana'\
-        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
-        +'\n# AUTHOR     %s' % gu.get_login()\
-        +'\n# CWD        %s' % gu.get_cwd()\
-        +'\n# HOST       %s' % gu.get_hostname()\
-        +'\n# COMMAND    %s' % ' '.join(sys.argv)\
-        +'\n# RELEASE    %s' % gu.get_enviroment('CONDA_DEFAULT_ENV')\
-        +'\n# CALIB_TYPE geometry'\
-        +'\n# DETTYPE    %s' % det_type\
-        +'\n# DETECTOR   %s' % calib\
-        +'\n# METROLOGY  N/A'\
-        '\n# EXPERIMENT N/A'\
-        +'\n%s' % comments\
-        +'\n'\
-        +'\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'\
-        '\n'
+    def header_psana(det_type, experiment):
+        if det_type.lower() == 'rayonix':
+            txt=\
+            '\n# TITLE       Geometry parameters of Rayonix'\
+            +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+            +'\n# METROLOGY  no metrology available'\
+            +'\n# AUTHOR     %s' % gu.get_login()\
+            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# DETECTOR   Rayonix'\
+            +'\n# CALIB_TYPE geometry'\
+            +'\n# COMMENT:01 Automatically created from BayFAI for the Rayonix detector'\
+            +'\n'
+        elif det_type.lower() == 'epix10k2m':
+            txt=\
+            '\n# TITLE       Geometry parameters of ePix10k2M'\
+            +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+            +'\n# METROLOGY  no metrology available'\
+            +'\n# AUTHOR     %s' % gu.get_login()\
+            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# DETECTOR   Epix10ka2M'\
+            +'\n# CALIB_TYPE geometry'\
+            +'\n# COMMENT:01 Automatically created from BayFAI for the 16-segment ePix10k2M detector'\
+            +'\n'
+        elif 'epix10kaquad' in det_type.lower():
+            txt=\
+            '\n# TITLE       Geometry parameters of ePix10kaQuad'\
+            +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+            +'\n# METROLOGY  no metrology available'\
+            +'\n# AUTHOR     %s' % gu.get_login()\
+            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# DETECTOR   %s' % det_type\
+            +'\n# CALIB_TYPE geometry'\
+            +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment ePix10kaQuad detector'\
+            +'\n'
+        elif det_type.lower() == 'jungfrau4m':
+            txt=\
+            '\n# TITLE       Geometry parameters of Jungfrau'\
+            +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+            +'\n# METROLOGY  no metrology available'\
+            +'\n# AUTHOR     %s' % gu.get_login()\
+            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# DETECTOR   DetLab.0:Jungfrau.2 or jungfrau4M'\
+            +'\n# CALIB_TYPE geometry'\
+            +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
+            +'\n'
+        txt +=\
+            +'\n# PARAM:01 PARENT     - name and version of the parent object'\
+            +'\n# PARAM:02 PARENT_IND - index of the parent object'\
+            +'\n# PARAM:03 OBJECT     - name and version of the object'\
+            +'\n# PARAM:04 OBJECT_IND - index of the new object'\
+            +'\n# PARAM:05 X0         - x-coordinate [um] of the object origin in the parent frame'\
+            +'\n# PARAM:06 Y0         - y-coordinate [um] of the object origin in the parent frame'\
+            +'\n# PARAM:07 Z0         - z-coordinate [um] of the object origin in the parent frame'\
+            +'\n# PARAM:08 ROT_Z      - object design rotation angle [deg] around Z axis of the parent frame'\
+            +'\n# PARAM:09 ROT_Y      - object design rotation angle [deg] around Y axis of the parent frame'\
+            +'\n# PARAM:10 ROT_X      - object design rotation angle [deg] around X axis of the parent frame'\
+            +'\n# PARAM:11 TILT_Z     - object tilt angle [deg] around Z axis of the parent frame'\
+            +'\n# PARAM:12 TILT_Y     - object tilt angle [deg] around Y axis of the parent frame'\
+            +'\n# PARAM:13 TILT_X     - object tilt angle [deg] around X axis of the parent frame'\
+            +'\n'\
+            +'\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'
+        return txt
 
     def _parse_line_as_parameter(self, line):
         assert isinstance(line, str), 'line is not a str object'
@@ -445,22 +477,27 @@ class CrystFELToPsana:
             line = linef.strip('\n')
             if not line.strip(): continue # discard empty strings
             if line[0] == ';':            # accumulate list of comments
-                if 'calib' in line:
-                    self.calib = line.split('=', 1)[1].strip()
                 self.list_of_comments.append(line)
                 continue
             self._parse_line_as_parameter(line)
         f.close()
         self.valid = True
 
-    def geom_to_data(self, segname, panelasics, det_type, out_file):
-        sg = sgs.Create(segname=segname, pbits=0, use_wide_pix_center=False)
+    def geom_to_data(self, panelasics, det_type, psana_file, experiment, out_file):
+        geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
+        top = geo.get_top_geo()
+        child = top.get_list_of_children()[0]
+        topname = top.oname
+        childname = child.oname
+        seg = geo.get_seg_geo()
+        sg = seg.algo
+        segname = seg.oname
         X, Y, Z = sg.pixel_coord_array()
         PIX_SIZE_UM = sg.get_pix_size_um()
         M_TO_UM = 1e6
-        xc0, yc0, zc0 = X[0,0], Y[0,0], Z[0,0]
+        xc0, yc0, _ = X[0,0], Y[0,0], Z[0,0]
         zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
-        recs = CrystFELToPsana.header_psana(list_of_cmts=self.list_of_comments, det_type=det_type, calib=segname)
+        recs = CrystFELToPsana.header_psana(det_type=det_type, experiment=experiment)
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panelasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
         zoffset_m += meanroundz
@@ -479,16 +516,16 @@ class CrystFELToPsana:
             angle_deg = degrees(atan2(uf[1],uf[0]))
             angle_z, tilt_z = CrystFELToPsana.angle_and_tilt(angle_deg)
             tilt_x, tilt_y = CrystFELToPsana.tilt_xy(uf,us,i,k)
-            recs += '\n      CAMERA  0 %12s %2d' %(segname, i)\
+            recs += '\n%12s  0 %12s %2d' %(childname, segname, i)\
                 +'  %8d %8d %8d %7.0f      0      0   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
-        recs += '\n          IP  0       CAMERA  0         0        0'\
-                ' %8d       0      0      0    0.00000   0.00000   0.00000' % (zoffset_m*M_TO_UM)
+        recs += '\n%12s  0 %12s  0' %(topname, childname)\
+            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (zoffset_m*M_TO_UM)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
 
-    def convert_geom_to_data(self, det_type, out_file):
+    def convert_geom_to_data(self, det_type, psana_file, out_file):
         det_type_lower = det_type.lower()
         if "epix10kaquad" in det_type_lower:
             det_type_lower = "epix10kaquad"
@@ -497,7 +534,7 @@ class CrystFELToPsana:
             panelasics = 'p0a0'
         else:
             panelasics = det_type_to_pars.get(det_type_lower, None)
-        self.geom_to_data(self.calib, panelasics, det_type, out_file)
+        self.geom_to_data(panelasics, det_type, psana_file, out_file)
 
 class CrystFELToPyFAI:
     """
@@ -541,6 +578,6 @@ class PyFAIToPsana:
     def __init__(self, detector, params, psana_file, out_file):
         path = os.path.dirname(out_file)
         geom_file = os.path.join(path, "temp.geom")
-        PyFAIToCrystFEL(detector=detector, params=params, psana_file=psana_file, out_file=geom_file)
-        CrystFELToPsana(in_file=geom_file, det_type=detector.det_type, out_file=out_file)
+        PyFAIToCrystFEL(detector=detector, params=params, out_file=geom_file)
+        CrystFELToPsana(in_file=geom_file, det_type=detector.det_type, psana_file=psana_file, out_file=out_file)
         os.remove(geom_file)
