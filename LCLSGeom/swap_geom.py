@@ -350,14 +350,14 @@ class CrystFELToPsana:
             False
 
     @staticmethod
-    def header_psana(det_type, experiment):
+    def header_psana(det_type):
         if det_type.lower() == 'rayonix':
             txt=\
             '\n# TITLE       Geometry parameters of Rayonix'\
             +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
             +'\n# METROLOGY  no metrology available'\
             +'\n# AUTHOR     %s' % gu.get_login()\
-            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# EXPERIMENT N\A'\
             +'\n# DETECTOR   Rayonix'\
             +'\n# CALIB_TYPE geometry'\
             +'\n# COMMENT:01 Automatically created from BayFAI for the Rayonix detector'\
@@ -368,7 +368,7 @@ class CrystFELToPsana:
             +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
             +'\n# METROLOGY  no metrology available'\
             +'\n# AUTHOR     %s' % gu.get_login()\
-            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# EXPERIMENT N\A'\
             +'\n# DETECTOR   Epix10ka2M'\
             +'\n# CALIB_TYPE geometry'\
             +'\n# COMMENT:01 Automatically created from BayFAI for the 16-segment ePix10k2M detector'\
@@ -379,7 +379,7 @@ class CrystFELToPsana:
             +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
             +'\n# METROLOGY  no metrology available'\
             +'\n# AUTHOR     %s' % gu.get_login()\
-            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# EXPERIMENT N\A'\
             +'\n# DETECTOR   %s' % det_type\
             +'\n# CALIB_TYPE geometry'\
             +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment ePix10kaQuad detector'\
@@ -390,7 +390,7 @@ class CrystFELToPsana:
             +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
             +'\n# METROLOGY  no metrology available'\
             +'\n# AUTHOR     %s' % gu.get_login()\
-            +'\n# EXPERIMENT %s' % experiment\
+            +'\n# EXPERIMENT N\A'\
             +'\n# DETECTOR   DetLab.0:Jungfrau.2 or jungfrau4M'\
             +'\n# CALIB_TYPE geometry'\
             +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
@@ -483,7 +483,7 @@ class CrystFELToPsana:
         f.close()
         self.valid = True
 
-    def geom_to_data(self, panelasics, det_type, psana_file, experiment, out_file):
+    def geom_to_data(self, panelasics, det_type, psana_file, out_file):
         geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -497,7 +497,7 @@ class CrystFELToPsana:
         M_TO_UM = 1e6
         xc0, yc0, _ = X[0,0], Y[0,0], Z[0,0]
         zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
-        recs = CrystFELToPsana.header_psana(det_type=det_type, experiment=experiment)
+        recs = CrystFELToPsana.header_psana(det_type=det_type)
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panelasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
         zoffset_m += meanroundz
