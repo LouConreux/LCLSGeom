@@ -396,21 +396,21 @@ class CrystFELToPsana:
             +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
             +'\n'
         txt +=\
-            +'\n# PARAM:01 PARENT     - name and version of the parent object'\
-            +'\n# PARAM:02 PARENT_IND - index of the parent object'\
-            +'\n# PARAM:03 OBJECT     - name and version of the object'\
-            +'\n# PARAM:04 OBJECT_IND - index of the new object'\
-            +'\n# PARAM:05 X0         - x-coordinate [um] of the object origin in the parent frame'\
-            +'\n# PARAM:06 Y0         - y-coordinate [um] of the object origin in the parent frame'\
-            +'\n# PARAM:07 Z0         - z-coordinate [um] of the object origin in the parent frame'\
-            +'\n# PARAM:08 ROT_Z      - object design rotation angle [deg] around Z axis of the parent frame'\
-            +'\n# PARAM:09 ROT_Y      - object design rotation angle [deg] around Y axis of the parent frame'\
-            +'\n# PARAM:10 ROT_X      - object design rotation angle [deg] around X axis of the parent frame'\
-            +'\n# PARAM:11 TILT_Z     - object tilt angle [deg] around Z axis of the parent frame'\
-            +'\n# PARAM:12 TILT_Y     - object tilt angle [deg] around Y axis of the parent frame'\
-            +'\n# PARAM:13 TILT_X     - object tilt angle [deg] around X axis of the parent frame'\
-            +'\n'\
-            +'\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'
+            '\n# PARAM:01 PARENT     - name and version of the parent object'\
+            '\n# PARAM:02 PARENT_IND - index of the parent object'\
+            '\n# PARAM:03 OBJECT     - name and version of the object'\
+            '\n# PARAM:04 OBJECT_IND - index of the new object'\
+            '\n# PARAM:05 X0         - x-coordinate [um] of the object origin in the parent frame'\
+            '\n# PARAM:06 Y0         - y-coordinate [um] of the object origin in the parent frame'\
+            '\n# PARAM:07 Z0         - z-coordinate [um] of the object origin in the parent frame'\
+            '\n# PARAM:08 ROT_Z      - object design rotation angle [deg] around Z axis of the parent frame'\
+            '\n# PARAM:09 ROT_Y      - object design rotation angle [deg] around Y axis of the parent frame'\
+            '\n# PARAM:10 ROT_X      - object design rotation angle [deg] around X axis of the parent frame'\
+            '\n# PARAM:11 TILT_Z     - object tilt angle [deg] around Z axis of the parent frame'\
+            '\n# PARAM:12 TILT_Y     - object tilt angle [deg] around Y axis of the parent frame'\
+            '\n# PARAM:13 TILT_X     - object tilt angle [deg] around X axis of the parent frame'\
+            '\n'\
+            '\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'
         return txt
 
     def _parse_line_as_parameter(self, line):
