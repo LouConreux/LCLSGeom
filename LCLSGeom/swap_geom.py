@@ -558,12 +558,6 @@ class PyFAIToPsana:
         X = self.X.reshape(self.detector.raw_shape)
         Y = self.Y.reshape(self.detector.raw_shape)
         Z = self.Z.reshape(self.detector.raw_shape)
-        angle_x = 0
-        angle_y = 0
-        if all ([geo.rot_x != 0.0 for geo in child.get_list_of_children()]):
-            angle_x = child.get_list_of_children()[0].rot_x
-        if all([geo.rot_y != 0.0 for geo in child.get_list_of_children()]):
-            angle_y = child.get_list_of_children()[0].rot_y
         recs = header_psana(det_type=self.detector.det_type)
         distance_um = round(Z.mean()) # round to 1µm
         for p in range(npanels):
@@ -581,9 +575,12 @@ class PyFAIToPsana:
             nfs = vfs / np.linalg.norm(vfs)
             nss = vss / np.linalg.norm(vss)
             vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
-            angle_deg = degrees(atan2(nfs[1], nfs[0]))
-            angle_z, tilt_z = angle_and_tilt(angle_deg)
-            tilt_x, tilt_y = tilt_xy(nfs, nss)
+            angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
+            angle_deg_y = degrees(atan2(nfs[0], nfs[2]))
+            angle_deg_x = degrees(atan2(nfs[2], nfs[1]))
+            angle_z, tilt_z = angle_and_tilt(angle_deg_z)
+            angle_y, tilt_y = angle_and_tilt(angle_deg_y)
+            angle_x, tilt_x = angle_and_tilt(angle_deg_x)
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
