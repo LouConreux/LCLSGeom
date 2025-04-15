@@ -46,7 +46,7 @@ def unit_vector_pitch_angle_max_ind(u):
     u : numpy.ndarray
         Input unit vector
     """
-    absu = np.absolute(u)
+    absu = np.abs(u)
     imax = np.where(absu == np.amax(absu))[0]
     pitch = degrees(atan2(u[2],u[imax]))
     pitch = (pitch+180) if pitch<-90 else (pitch-180) if pitch>90 else pitch
@@ -66,7 +66,7 @@ def tilt_xy(uf, us):
     """
     tilt_f, imaxf = unit_vector_pitch_angle_max_ind(uf)
     tilt_s, imaxs = unit_vector_pitch_angle_max_ind(us)
-    tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf==0 else (tilt_f, tilt_s)
+    tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf == 0 else (tilt_f, tilt_s)
     return tilt_x, -tilt_y
 
 def rotate_z(angle_z, angle_x, angle_y):
@@ -83,13 +83,19 @@ def rotate_z(angle_z, angle_x, angle_y):
         Angle around Y-axis in degrees in [0, 90, 180, 270]
     """
     if angle_z == 0.0:
-        return angle_x, angle_y
+        result_x, result_y = angle_x, angle_y
     elif angle_z == 90.0:
-        angle_x, angle_y = angle_y, -angle_x
-        return angle_x, angle_y if angle_y >= 0 else angle_y + 360
+        result_x, result_y = angle_y, -angle_x
+        result_y = result_y if result_y >= 0 else result_y + 360
     elif angle_z == 180.0:
-        angle_x, angle_y = -angle_x, -angle_y
-        return angle_x if angle_x >= 0 else angle_x + 360, angle_y if angle_y >= 0 else angle_y + 360
+        result_x, result_y = -angle_x, -angle_y
+        result_x = result_x if result_x >= 0 else result_x + 360
+        result_y = result_y if result_y >= 0 else result_y + 360
     elif angle_z == 270.0:
-        angle_x, angle_y = -angle_y, angle_x
-        return angle_x if angle_x >= 0 else angle_x + 360, angle_y
+        result_x, result_y = -angle_y, angle_x
+        result_x = result_x if result_x >= 0 else result_x + 360
+    else:
+        raise ValueError("angle_z must be one of [0, 90, 180, 270]")
+    result_x = 0.0 if result_x == 0.0 else result_x
+    result_y = 0.0 if result_y == 0.0 else result_y
+    return result_x, result_y
