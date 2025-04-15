@@ -68,3 +68,25 @@ def tilt_xy(uf, us):
     tilt_s, imaxs = unit_vector_pitch_angle_max_ind(us)
     tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf==0 else (tilt_f, tilt_s)
     return tilt_x, -tilt_y
+
+def rotate_z(angle_z, angle_x, angle_y):
+    """
+    For a given angle around Z-axis, switch angle_x and angle_y appropriately.
+
+    Parameters
+    ----------
+    angle_z : float
+        Angle around Z-axis in degrees in [0, 90, 180, 270]
+    angle_x : float
+        Angle around X-axis in degrees in [0, 90, 180, 270]
+    angle_y : float
+        Angle around Y-axis in degrees in [0, 90, 180, 270]
+    """
+    if angle_z == 0:
+        return angle_x, angle_y
+    elif angle_z == 90:
+        return angle_y, -angle_x
+    elif angle_z == 180:
+        return -angle_x, -angle_y
+    elif angle_z == 270:
+        return -angle_y, angle_x

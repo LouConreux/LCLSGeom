@@ -6,7 +6,7 @@ import pyFAI
 from .detector import get_detector
 from .calib import det_type_to_pars
 from .utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana
-from .geometry import angle_and_tilt, tilt_xy, get_beam_center
+from .geometry import angle_and_tilt, tilt_xy, rotate_z
 from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
 from PSCalib.GeometryAccess import GeometryAccess
 
@@ -558,6 +558,10 @@ class PyFAIToPsana:
         X = self.X.reshape(self.detector.raw_shape)
         Y = self.Y.reshape(self.detector.raw_shape)
         Z = self.Z.reshape(self.detector.raw_shape)
+        angle_child_y = child.get_list_of_children()[0].rot_x
+        angle_child_x = child.get_list_of_children()[0].rot_y
+        angle_child_z = child.get_list_of_children()[0].rot_z
+        angle_x, angle_y = rotate_z(angle_child_z, angle_child_x, angle_child_y)
         recs = header_psana(det_type=self.detector.det_type)
         distance_um = round(Z.mean()) # round to 1µm
         for p in range(npanels):
@@ -576,11 +580,8 @@ class PyFAIToPsana:
             nss = vss / np.linalg.norm(vss)
             vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
             angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
-            angle_deg_y = degrees(atan2(nfs[0], nfs[2]))
-            angle_deg_x = degrees(atan2(nfs[2], nfs[1]))
             angle_z, tilt_z = angle_and_tilt(angle_deg_z)
-            angle_y, tilt_y = angle_and_tilt(angle_deg_y)
-            angle_x, tilt_x = angle_and_tilt(angle_deg_x)
+            tilt_x, tilt_y = tilt_xy(nfs, nss)
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
