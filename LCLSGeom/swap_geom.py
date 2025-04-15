@@ -455,7 +455,7 @@ class PyFAIToPsana:
         self.detector = detector
         self.params = params
         self.correct_geom()
-        self.convert_pyfai_to_data(detector=detector, params=params, psana_file=psana_file, out_file=out_file)
+        self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
 
     def rotation_matrix(self, params):
         """
