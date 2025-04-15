@@ -82,11 +82,14 @@ def rotate_z(angle_z, angle_x, angle_y):
     angle_y : float
         Angle around Y-axis in degrees in [0, 90, 180, 270]
     """
-    if angle_z == 0:
+    if angle_z == 0.0:
         return angle_x, angle_y
-    elif angle_z == 90:
-        return angle_y, -angle_x
-    elif angle_z == 180:
-        return -angle_x, -angle_y
-    elif angle_z == 270:
-        return -angle_y, angle_x
+    elif angle_z == 90.0:
+        angle_x, angle_y = angle_y, -angle_x
+        return angle_x, angle_y if angle_y >= 0 else angle_y + 360
+    elif angle_z == 180.0:
+        angle_x, angle_y = -angle_x, -angle_y
+        return angle_x if angle_x >= 0 else angle_x + 360, angle_y if angle_y >= 0 else angle_y + 360
+    elif angle_z == 270.0:
+        angle_x, angle_y = -angle_y, angle_x
+        return angle_x if angle_x >= 0 else angle_x + 360, angle_y
