@@ -27,10 +27,10 @@ class PsanaToCrystFEL:
         0 = psana frame, 1 = lab frame
     """
 
-    def __init__(self, in_file, out_file, cframe=gu.CFRAME_PSANA):
+    def __init__(self, in_file, out_file, cframe=0):
         self.convert_data_to_geom(in_file=in_file, out_file=out_file, cframe=cframe)
 
-    def convert_data_to_geom(self, in_file, out_file, cframe=gu.CFRAME_PSANA):
+    def convert_data_to_geom(self, in_file, out_file, cframe=0):
         """
         Write a CrystFEL .geom file from a psana .data file using PSCalib.UtilsConvert functions
         """
