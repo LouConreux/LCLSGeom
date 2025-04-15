@@ -57,7 +57,7 @@ def header_psana(det_type):
     """
     if det_type.lower() == 'rayonix':
         txt=\
-        '\n# TITLE       Geometry parameters of Rayonix'\
+        '# TITLE       Geometry parameters of Rayonix'\
         +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % gu.get_login()\
@@ -68,7 +68,7 @@ def header_psana(det_type):
         +'\n'
     elif det_type.lower() == 'epix10k2m':
         txt=\
-        '\n# TITLE       Geometry parameters of ePix10k2M'\
+        '# TITLE       Geometry parameters of ePix10k2M'\
         +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % gu.get_login()\
@@ -79,7 +79,7 @@ def header_psana(det_type):
         +'\n'
     elif 'epix10kaquad' in det_type.lower():
         txt=\
-        '\n# TITLE       Geometry parameters of ePix10kaQuad'\
+        '# TITLE       Geometry parameters of ePix10kaQuad'\
         +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % gu.get_login()\
@@ -90,7 +90,7 @@ def header_psana(det_type):
         +'\n'
     elif det_type.lower() == 'jungfrau4m':
         txt=\
-        '\n# TITLE       Geometry parameters of Jungfrau'\
+        '# TITLE       Geometry parameters of Jungfrau'\
         +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % gu.get_login()\

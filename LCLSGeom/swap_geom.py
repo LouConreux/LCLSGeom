@@ -22,22 +22,19 @@ class PsanaToCrystFEL:
         Path to the psana .data file
     out_file : str
         Path to the output CrystFEL .geom file
-    cframe : int
-        Frame reference to convert to CrystFEL format
-        0 = psana frame, 1 = lab frame
     """
 
-    def __init__(self, in_file, out_file, cframe=0):
-        self.convert_data_to_geom(in_file=in_file, out_file=out_file, cframe=cframe)
+    def __init__(self, in_file, out_file):
+        self.convert_data_to_geom(in_file=in_file, out_file=out_file)
 
-    def convert_data_to_geom(self, in_file, out_file, cframe=0):
+    def convert_data_to_geom(self, in_file, out_file):
         """
         Write a CrystFEL .geom file from a psana .data file using PSCalib.UtilsConvert functions
         """
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=cframe)
+        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
         geo1 = geo.get_seg_geo() # GeometryObject
         seg = geo1.algo # object of the SegmentGeometry subclass
         nsegs = int(x.size/seg.size())
@@ -96,7 +93,7 @@ class PsanaToPyFAI:
         sg = seg.algo
         self.detector.segname = seg.oname
         self.detector.sg = sg
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True)
+        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
         x, y, z = self.psana_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
         nasics = self.detector.n_asics
@@ -561,6 +558,12 @@ class PyFAIToPsana:
         X = self.X.reshape(self.detector.raw_shape)
         Y = self.Y.reshape(self.detector.raw_shape)
         Z = self.Z.reshape(self.detector.raw_shape)
+        angle_x = 0
+        angle_y = 0
+        if all ([geo.rot_x != 0.0 for geo in child.get_list_of_children()]):
+            angle_x = child.get_list_of_children()[0].rot_x
+        if all([geo.rot_y != 0.0 for geo in child.get_list_of_children()]):
+            angle_y = child.get_list_of_children()[0].rot_y
         recs = header_psana(det_type=self.detector.det_type)
         distance_um = round(Z.mean()) # round to 1µm
         for p in range(npanels):
@@ -582,8 +585,8 @@ class PyFAIToPsana:
             angle_z, tilt_z = angle_and_tilt(angle_deg)
             tilt_x, tilt_y = tilt_xy(nfs, nss)
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
-                +'  %8d %8d %8d %7.0f      0      0   %8.5f  %8.5f  %8.5f'%\
-                (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
+                +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
+                (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
         recs += '\n%12s  0 %12s  0' %(topname, childname)\
             +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance_um)
         f=open(out_file,'w')
