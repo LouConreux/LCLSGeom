@@ -581,7 +581,7 @@ class PyFAIToPsana:
             angle_child_x = child.get_list_of_children()[p].rot_x
             angle_child_y = child.get_list_of_children()[p].rot_y
             angle_child_z = child.get_list_of_children()[p].rot_z
-            angle_x, angle_y = rotate_z(angle_child_z, angle_child_x, angle_child_y)
+            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)

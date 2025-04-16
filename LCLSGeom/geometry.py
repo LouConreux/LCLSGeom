@@ -69,7 +69,7 @@ def tilt_xy(uf, us):
     tilt_x, tilt_y = (tilt_s, tilt_f) if imaxf == 0 else (tilt_f, tilt_s)
     return tilt_x, -tilt_y
 
-def rotate_z(angle_z, angle_x, angle_y):
+def rotate_z(angle_z, angle_x, angle_y, tilt_x, tilt_y):
     """
     For a given angle around Z-axis, switch angle_x and angle_y appropriately.
 
@@ -81,21 +81,28 @@ def rotate_z(angle_z, angle_x, angle_y):
         Angle around X-axis in degrees in [0, 90, 180, 270]
     angle_y : float
         Angle around Y-axis in degrees in [0, 90, 180, 270]
+    tilt_x : float
+        Tilt angle around X-axis in degrees
+    tilt_y : float
+        Tilt angle around Y-axis in degrees
     """
     if angle_z == 0.0:
         result_x, result_y = angle_x, angle_y
     elif angle_z == 90.0:
         result_x, result_y = angle_y, -angle_x
+        tilt_x, tilt_y = tilt_y, -tilt_x
         result_y = result_y if result_y >= 0 else result_y + 360
     elif angle_z == 180.0:
         result_x, result_y = -angle_x, -angle_y
+        tilt_x, tilt_y = -tilt_x, -tilt_y
         result_x = result_x if result_x >= 0 else result_x + 360
         result_y = result_y if result_y >= 0 else result_y + 360
     elif angle_z == 270.0:
         result_x, result_y = -angle_y, angle_x
+        tilt_x, tilt_y = -tilt_y, tilt_x
         result_x = result_x if result_x >= 0 else result_x + 360
     else:
         raise ValueError("angle_z must be one of [0, 90, 180, 270]")
     result_x = 0.0 if result_x == 0.0 else result_x
     result_y = 0.0 if result_y == 0.0 else result_y
-    return result_x, result_y
+    return result_x, result_y, tilt_x, tilt_y
