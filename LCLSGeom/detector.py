@@ -44,7 +44,7 @@ class ePix10kaQuad(Detector):
             pixel_size = 0.0001
         if shape is None:
             shape = (4, 352, 384)
-        self.det_type = "epix10kaQuad"
+        self.det_type = "Epix10kaQuad"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = n_asics

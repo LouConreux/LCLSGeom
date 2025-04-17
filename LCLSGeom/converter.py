@@ -142,6 +142,165 @@ class PsanaToPyFAI:
                 pixel_corners[ss_portion_slab, fs_portion_slab, :, 2] = yasic
         return pixel_corners
 
+class PyFAIToPsana:
+    """
+    Class to convert PyFAI Detector instance to psana .data geometry files by using intermediate CrystFEL .geom files 
+
+    Parameters
+    ----------
+    detector : PyFAI detector instance
+        PyFAI detector instance
+    params : list
+        Detector parameters found by PyFAI calibration
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
+    out_file : str
+        Path to the output .psana file
+    """
+
+    def __init__(self, detector, params, psana_file, out_file):
+        self.detector = detector
+        self.params = params
+        self.correct_geom()
+        self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
+
+    def rotation_matrix(self, params):
+        """
+        Compute and return the detector tilts as a single rotation matrix
+
+        Parameters
+        ----------
+        params : list
+            Detector parameters found by PyFAI calibration
+        """
+        if params is None:
+            params = self.params
+        cos_rot1 = np.cos(params[3])
+        cos_rot2 = np.cos(params[4])
+        cos_rot3 = np.cos(params[5])
+        sin_rot1 = np.sin(params[3])
+        sin_rot2 = np.sin(params[4])
+        sin_rot3 = np.sin(params[5])
+        # Rotation about axis 1: Note this rotation is left-handed
+        rot1 = np.array([[1.0, 0.0, 0.0],
+                            [0.0, cos_rot1, sin_rot1],
+                            [0.0, -sin_rot1, cos_rot1]])
+        # Rotation about axis 2. Note this rotation is left-handed
+        rot2 = np.array([[cos_rot2, 0.0, -sin_rot2],
+                            [0.0, 1.0, 0.0],
+                            [sin_rot2, 0.0, cos_rot2]])
+        # Rotation about axis 3: Note this rotation is right-handed
+        rot3 = np.array([[cos_rot3, -sin_rot3, 0.0],
+                            [sin_rot3, cos_rot3, 0.0],
+                            [0.0, 0.0, 1.0]])
+        rotation_matrix = np.dot(np.dot(rot3, rot2), rot1)  # 3x3 matrix
+        return rotation_matrix
+    
+    def pyfai_to_psana(self, x, y, z, params):
+        """
+        Convert back to psana coordinates
+
+        Parameters
+        ----------
+        x : np.ndarray
+            X coordinate in meters
+        y : np.ndarray
+            Y coordinate in meters
+        z : np.ndarray
+            Z coordinate in meters
+        params : list
+            Detector parameters found by PyFAI calibration
+        """
+        z -= np.mean(z)
+        if params is None:
+            params = self.params
+        cos_rot1 = np.cos(params[3])
+        cos_rot2 = np.cos(params[4])
+        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
+        z += distance_sample_detector
+        x, y, z = x*1e6, y*1e6, z*1e6
+        return -x, y, -z
+
+    def correct_geom(self):
+        """
+        Correct the geometry based on the given parameters found by PyFAI calibration
+        Finally scale to micrometers (needed for writing CrystFEL .geom files)
+        """
+        params = self.params
+        p1, p2, p3 = self.detector.calc_cartesian_positions()
+        dist = self.params[0]
+        poni1 = self.params[1]
+        poni2 = self.params[2]
+        p1 = (p1 - poni1).ravel()
+        p2 = (p2 - poni2).ravel()
+        if p3 is None:
+            p3 = np.zeros_like(p1) + dist
+        else:
+            p3 = (p3+dist).ravel()
+        coord_det = np.stack((p1, p2, p3), axis=0)
+        coord_sample = np.dot(self.rotation_matrix(params), coord_det)
+        x, y, z = coord_sample
+        x, y, z = self.pyfai_to_psana(x, y, z, params)
+        self.X = x
+        self.Y = y
+        self.Z = z
+
+    def convert_pyfai_to_data(self, psana_file, out_file):
+        """
+        Main function to convert PyFAI coordinates to psana .data geometry file
+
+        Parameters
+        ----------
+        psana_file : str
+            Path to the input .data file
+        out_file : str
+            Path to the output .data file
+        """
+        geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
+        top = geom.get_top_geo()
+        child = top.get_list_of_children()[0]
+        topname = top.oname
+        childname = child.oname
+        npanels = self.detector.n_modules
+        asics_shape = self.detector.asics_shape
+        fs_size = self.detector.fs_size
+        ss_size = self.detector.ss_size
+        X = self.X.reshape(self.detector.raw_shape)
+        Y = self.Y.reshape(self.detector.raw_shape)
+        Z = self.Z.reshape(self.detector.raw_shape)
+        recs = header_psana(det_type=self.detector.det_type)
+        distance_um = round(Z.mean()) # round to 1µm
+        for p in range(npanels):
+            xp = X[p, :]
+            yp = Y[p, :]
+            zp = Z[p, :]
+            vfs = np.array((\
+                xp[0, fs_size * asics_shape[1] - 1] - xp[0, 0],\
+                yp[0, fs_size * asics_shape[1] - 1] - yp[0, 0],\
+                zp[0, fs_size * asics_shape[1] - 1] - zp[0, 0]))
+            vss = np.array((\
+                xp[ss_size * asics_shape[0] - 1,0] - xp[0, 0],\
+                yp[ss_size * asics_shape[0] - 1,0] - yp[0, 0],\
+                zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
+            nfs = vfs / np.linalg.norm(vfs)
+            nss = vss / np.linalg.norm(vss)
+            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
+            angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
+            angle_z, tilt_z = angle_and_tilt(angle_deg_z)
+            tilt_x, tilt_y = tilt_xy(nfs, nss)
+            angle_child_x = child.get_list_of_children()[p].rot_x
+            angle_child_y = child.get_list_of_children()[p].rot_y
+            angle_child_z = child.get_list_of_children()[p].rot_z
+            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
+            recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
+                +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
+                (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
+        recs += '\n%12s  0 %12s  0' %(topname, childname)\
+            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance_um)
+        f=open(out_file,'w')
+        f.write(recs)
+        f.close()
+
 class PyFAIToCrystFEL:
     """
     Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
@@ -369,31 +528,35 @@ class CrystFELToPsana:
         PIX_SIZE_UM = sg.get_pix_size_um()
         M_TO_UM = 1e6
         xc0, yc0, _ = X[0,0], Y[0,0], Z[0,0]
-        zoffset_m = self.dict_of_pars.get('coffset', 0) # in meters
+        distance = self.dict_of_pars.get('coffset', 0) # in meters
         recs = header_psana(det_type=det_type)
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panelasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6 # round z to 1µm
-        zoffset_m += meanroundz
-        for i,k in enumerate(panelasics.split(',')):
-            dicasic = self.dict_of_pars[k]
-            uf = np.array(dicasic.get('fs', None), dtype=np.float64) # unit vector f
-            us = np.array(dicasic.get('ss', None), dtype=np.float64) # unit vector s
-            vf = uf*abs(xc0)
-            vs = us*abs(yc0)
+        distance += meanroundz
+        for p, panel in enumerate(panelasics.split(',')):
+            dicasic = self.dict_of_pars[panel]
+            nfs = np.array(dicasic.get('fs', None), dtype=np.float64) # unit vector f
+            nss = np.array(dicasic.get('ss', None), dtype=np.float64) # unit vector s
+            vfs = nfs*abs(xc0)
+            vss = nfs*abs(yc0)
             x0pix = dicasic.get('corner_x', 0) # The units are pixel widths of the current panel
             y0pix = dicasic.get('corner_y', 0)
-            z0m   = dicasic.get('coffset', 0)
-            v00center = vf + vs
-            v00corner = np.array((x0pix*PIX_SIZE_UM, y0pix*PIX_SIZE_UM, (z0m - zoffset_m)*M_TO_UM))
+            z0    = dicasic.get('coffset', 0)
+            v00center = vfs + vss
+            v00corner = np.array((x0pix*PIX_SIZE_UM, y0pix*PIX_SIZE_UM, (z0 - distance)*M_TO_UM))
             vcent = v00corner + v00center
-            angle_deg = degrees(atan2(uf[1],uf[0]))
-            angle_z, tilt_z = angle_and_tilt(angle_deg)
-            tilt_x, tilt_y = tilt_xy(uf,us)
-            recs += '\n%12s  0 %12s %2d' %(childname, segname, i)\
-                +'  %8d %8d %8d %7.0f      0      0   %8.5f  %8.5f  %8.5f'%\
-                (vcent[0], vcent[1], vcent[2], angle_z, tilt_z, tilt_y, tilt_x)
+            angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
+            angle_z, tilt_z = angle_and_tilt(angle_deg_z)
+            tilt_x, tilt_y = tilt_xy(nfs, nss)
+            angle_child_x = child.get_list_of_children()[p].rot_x
+            angle_child_y = child.get_list_of_children()[p].rot_y
+            angle_child_z = child.get_list_of_children()[p].rot_z
+            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
+            recs += '\n%12s  0 %12s %2d' %(childname, segname, p)\
+                +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
+                (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
         recs += '\n%12s  0 %12s  0' %(topname, childname)\
-            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (zoffset_m*M_TO_UM)
+            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance*M_TO_UM)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
@@ -419,174 +582,17 @@ class CrystFELToPyFAI:
         Path to the CrystFEL .geom file
     det_type : str
         Detector type
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
     pixel_size : float
         Pixel size in meters
     shape : tuple
         Detector shape (n_modules, ss_size, fs_size)
     """
-    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
+    def __init__(self, in_file, det_type, psana_file, pixel_size=None, shape=None):
         path = os.path.dirname(in_file)
         data_file = os.path.join(path, "temp.data")
-        CrystFELToPsana(in_file=in_file, det_type=det_type, out_file=data_file)
+        CrystFELToPsana(in_file=in_file, det_type=det_type, psana_file=psana_file, out_file=data_file)
         psana_to_pyfai = PsanaToPyFAI(in_file=data_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
         self.detector = psana_to_pyfai.detector
         os.remove(data_file)
-
-class PyFAIToPsana:
-    """
-    Class to convert PyFAI Detector instance to psana .data geometry files by using intermediate CrystFEL .geom files 
-
-    Parameters
-    ----------
-    detector : PyFAI detector instance
-        PyFAI detector instance
-    params : list
-        Detector parameters found by PyFAI calibration
-    psana_file : str
-        Path to the psana .data file for retrieving segmentation information
-    out_file : str
-        Path to the output .psana file
-    """
-
-    def __init__(self, detector, params, psana_file, out_file):
-        self.detector = detector
-        self.params = params
-        self.correct_geom()
-        self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
-
-    def rotation_matrix(self, params):
-        """
-        Compute and return the detector tilts as a single rotation matrix
-
-        Parameters
-        ----------
-        params : list
-            Detector parameters found by PyFAI calibration
-        """
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        cos_rot3 = np.cos(params[5])
-        sin_rot1 = np.sin(params[3])
-        sin_rot2 = np.sin(params[4])
-        sin_rot3 = np.sin(params[5])
-        # Rotation about axis 1: Note this rotation is left-handed
-        rot1 = np.array([[1.0, 0.0, 0.0],
-                            [0.0, cos_rot1, sin_rot1],
-                            [0.0, -sin_rot1, cos_rot1]])
-        # Rotation about axis 2. Note this rotation is left-handed
-        rot2 = np.array([[cos_rot2, 0.0, -sin_rot2],
-                            [0.0, 1.0, 0.0],
-                            [sin_rot2, 0.0, cos_rot2]])
-        # Rotation about axis 3: Note this rotation is right-handed
-        rot3 = np.array([[cos_rot3, -sin_rot3, 0.0],
-                            [sin_rot3, cos_rot3, 0.0],
-                            [0.0, 0.0, 1.0]])
-        rotation_matrix = np.dot(np.dot(rot3, rot2), rot1)  # 3x3 matrix
-        return rotation_matrix
-    
-    def pyfai_to_psana(self, x, y, z, params):
-        """
-        Convert back to psana coordinates
-
-        Parameters
-        ----------
-        x : np.ndarray
-            X coordinate in meters
-        y : np.ndarray
-            Y coordinate in meters
-        z : np.ndarray
-            Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
-        """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
-        x, y, z = x*1e6, y*1e6, z*1e6
-        return -x, y, -z
-
-    def correct_geom(self):
-        """
-        Correct the geometry based on the given parameters found by PyFAI calibration
-        Finally scale to micrometers (needed for writing CrystFEL .geom files)
-        """
-        params = self.params
-        p1, p2, p3 = self.detector.calc_cartesian_positions()
-        dist = self.params[0]
-        poni1 = self.params[1]
-        poni2 = self.params[2]
-        p1 = (p1 - poni1).ravel()
-        p2 = (p2 - poni2).ravel()
-        if p3 is None:
-            p3 = np.zeros_like(p1) + dist
-        else:
-            p3 = (p3+dist).ravel()
-        coord_det = np.stack((p1, p2, p3), axis=0)
-        coord_sample = np.dot(self.rotation_matrix(params), coord_det)
-        x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, params)
-        self.X = x
-        self.Y = y
-        self.Z = z
-
-    def convert_pyfai_to_data(self, psana_file, out_file):
-        """
-        Main function to convert PyFAI coordinates to psana .data geometry file
-
-        Parameters
-        ----------
-        psana_file : str
-            Path to the input .data file
-        out_file : str
-            Path to the output .data file
-        """
-        geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
-        top = geom.get_top_geo()
-        child = top.get_list_of_children()[0]
-        topname = top.oname
-        childname = child.oname
-        npanels = self.detector.n_modules
-        asics_shape = self.detector.asics_shape
-        fs_size = self.detector.fs_size
-        ss_size = self.detector.ss_size
-        X = self.X.reshape(self.detector.raw_shape)
-        Y = self.Y.reshape(self.detector.raw_shape)
-        Z = self.Z.reshape(self.detector.raw_shape)
-        recs = header_psana(det_type=self.detector.det_type)
-        distance_um = round(Z.mean()) # round to 1µm
-        for p in range(npanels):
-            xp = X[p, :]
-            yp = Y[p, :]
-            zp = Z[p, :]
-            vfs = np.array((\
-                xp[0, fs_size * asics_shape[1] - 1] - xp[0, 0],\
-                yp[0, fs_size * asics_shape[1] - 1] - yp[0, 0],\
-                zp[0, fs_size * asics_shape[1] - 1] - zp[0, 0]))
-            vss = np.array((\
-                xp[ss_size * asics_shape[0] - 1,0] - xp[0, 0],\
-                yp[ss_size * asics_shape[0] - 1,0] - yp[0, 0],\
-                zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
-            nfs = vfs / np.linalg.norm(vfs)
-            nss = vss / np.linalg.norm(vss)
-            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
-            angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
-            angle_z, tilt_z = angle_and_tilt(angle_deg_z)
-            tilt_x, tilt_y = tilt_xy(nfs, nss)
-            angle_child_x = child.get_list_of_children()[p].rot_x
-            angle_child_y = child.get_list_of_children()[p].rot_y
-            angle_child_z = child.get_list_of_children()[p].rot_z
-            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
-            recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
-                +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
-                (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
-        recs += '\n%12s  0 %12s  0' %(topname, childname)\
-            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance_um)
-        f=open(out_file,'w')
-        f.write(recs)
-        f.close()
