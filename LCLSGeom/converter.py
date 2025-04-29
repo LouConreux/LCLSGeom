@@ -69,6 +69,7 @@ class PsanaToPyFAI:
     
     def __init__(self, in_file, det_type, pixel_size=None, shape=None):
         self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
+        self.get_pixel_index_map(in_file=in_file)
         corner_array = self.get_pixel_corners(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
     
@@ -84,6 +85,14 @@ class PsanaToPyFAI:
         else:
             z -= np.mean(z)
         return -x, y, -z
+
+    def get_pixel_index_map(self, in_file):
+        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
+        temp_index = [np.asarray(t) for t in geo.get_pixel_coord_indexes()]
+        pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
+        pixel_index_map[..., 0] = temp_index[0][0]
+        pixel_index_map[..., 1] = temp_index[1][0]
+        self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
     def get_pixel_corners(self, in_file):
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
