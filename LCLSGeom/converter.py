@@ -280,9 +280,14 @@ class PyFAIToPsana:
         recs = header_psana(det_type=self.detector.det_type)
         distance_um = round(Z.mean()) # round to 1µm
         for p in range(npanels):
-            xp = X[p, :]
-            yp = Y[p, :]
-            zp = Z[p, :]
+            if npanels != 1:
+                xp = X[p, :]
+                yp = Y[p, :]
+                zp = Z[p, :]
+            else:
+                xp = X
+                yp = Y
+                zp = Z
             vfs = np.array((\
                 xp[0, fs_size * asics_shape[1] - 1] - xp[0, 0],\
                 yp[0, fs_size * asics_shape[1] - 1] - yp[0, 0],\
@@ -422,13 +427,16 @@ class PyFAIToCrystFEL:
         """
         X, Y, Z = self.X, self.Y, self.Z
         seg = self.detector.sg
-        shape = self.detector.raw_shape
-        X = X.reshape(shape)
-        Y = Y.reshape(shape)
-        Z = Z.reshape(shape)
+        npanels = self.detector.n_modules
+        X = X.reshape(self.detector.raw_shape)
+        Y = Y.reshape(self.detector.raw_shape)
+        Z = Z.reshape(self.detector.raw_shape)
         txt = header_crystfel()
-        for n in range(shape[0]):
-            txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
+        for n in range(npanels):
+            if npanels != 1:
+                txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
+            else:
+                txt += panel_constants_to_crystfel(seg, n, X, Y, Z)
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
