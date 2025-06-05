@@ -108,6 +108,33 @@ class Jungfrau4M(Detector):
         self.pixel_size = pixel_size
         super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
+class Jungfrau16M(Detector):
+    """
+    PyFAI Detector instance for the Jungfrau16M
+    """
+
+    def __init__(
+        self,
+        pixel_size=None,
+        shape=None,
+        n_asics=32,
+        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
+        **kwargs,
+    ):
+        if pixel_size is None:
+            pixel_size = 0.000075
+        if shape is None:
+            shape = (32, 512, 1024)
+        self.det_type = "jungfrau16M"
+        self.raw_shape = shape
+        self.n_modules = shape[0]
+        self.n_asics = n_asics
+        self.asics_shape = asics_shape
+        self.ss_size = shape[1] // asics_shape[0]
+        self.fs_size = shape[2] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+
 class Rayonix(Detector):
     """
     PyFAI Detector instance for the Rayonix
@@ -153,6 +180,8 @@ def get_detector(det_type, pixel_size=None, shape=None):
         return Jungfrau1M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau4m":
         return Jungfrau4M(pixel_size=pixel_size, shape=shape)
+    elif det_type.lower() == "jungfrau16m":
+        return Jungfrau16M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "rayonix":
         return Rayonix(pixel_size=pixel_size, shape=shape)
     else:
