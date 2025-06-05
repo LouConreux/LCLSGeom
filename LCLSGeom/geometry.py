@@ -1,6 +1,36 @@
 import numpy as np
 from math import degrees, atan2
 
+def rotation_matrix(params):
+    """
+    Compute and return the detector tilts as a single rotation matrix
+
+    Parameters
+    ----------
+    params : list
+        Detector parameters found by PyFAI calibration
+    """
+    cos_rot1 = np.cos(params[3])
+    cos_rot2 = np.cos(params[4])
+    cos_rot3 = np.cos(params[5])
+    sin_rot1 = np.sin(params[3])
+    sin_rot2 = np.sin(params[4])
+    sin_rot3 = np.sin(params[5])
+    # Rotation about axis 1: Note this rotation is left-handed
+    rot1 = np.array([[1.0, 0.0, 0.0],
+                        [0.0, cos_rot1, sin_rot1],
+                        [0.0, -sin_rot1, cos_rot1]])
+    # Rotation about axis 2. Note this rotation is left-handed
+    rot2 = np.array([[cos_rot2, 0.0, -sin_rot2],
+                        [0.0, 1.0, 0.0],
+                        [sin_rot2, 0.0, cos_rot2]])
+    # Rotation about axis 3: Note this rotation is right-handed
+    rot3 = np.array([[cos_rot3, -sin_rot3, 0.0],
+                        [sin_rot3, cos_rot3, 0.0],
+                        [0.0, 0.0, 1.0]])
+    rotation_matrix = np.dot(np.dot(rot3, rot2), rot1)  # 3x3 matrix
+    return rotation_matrix
+
 def get_beam_center(params):
     """
     From pyFAI calibration parameters, return the beam center in meters
