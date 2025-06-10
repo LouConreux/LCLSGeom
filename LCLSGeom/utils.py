@@ -86,11 +86,11 @@ def header_psana(det_type):
         +'\n# EXPERIMENT N\A'\
         +'\n# DETECTOR   %s' % det_type\
         +'\n# CALIB_TYPE geometry'\
-        +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment ePix10kaQuad detector'\
+        +'\n# COMMENT:01 Automatically created from BayFAI for the ePix10kaQuad detector'\
         +'\n'
     elif det_type.lower() == 'jungfrau4m':
         txt=\
-        '# TITLE       Geometry parameters of Jungfrau'\
+        '# TITLE       Geometry parameters of Jungfrau4M'\
         +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % gu.get_login()\
