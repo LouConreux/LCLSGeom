@@ -6,7 +6,7 @@ from .detector import get_detector
 from .calib import det_type_to_pars
 from .utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
 from .geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
-from PSCalib.GeometryAccess import GeometryAccess
+from psana.pscalib.geometry.GeometryAccess import GeometryAccess
 pyFAI.use_opencl = False
 
 class PsanaToCrystFEL:
