@@ -144,7 +144,7 @@ class Jungfrau16M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=32,
+        n_asics=8,
         asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
