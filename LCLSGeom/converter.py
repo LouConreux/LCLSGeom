@@ -1,15 +1,12 @@
 import os
-import sys
 import numpy as np
 from math import atan2, degrees
 import pyFAI
 from .detector import get_detector
 from .calib import det_type_to_pars
-from .utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana
+from .utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
 from .geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
-from PSCalib.UtilsConvert import header_crystfel, panel_constants_to_crystfel
-from PSCalib.GeometryAccess import GeometryAccess
-
+from psana.pscalib.geometry.GeometryAccess import GeometryAccess
 pyFAI.use_opencl = False
 
 class PsanaToCrystFEL:
@@ -39,12 +36,43 @@ class PsanaToCrystFEL:
         seg = geo1.algo
         nsegs = int(x.size/seg.size())
         shape = (nsegs,) + seg.shape()
+        arows, acols = seg.asic_rows_cols()
+        srows, _ = seg.shape()
+        pix_size = seg.pixel_scale_size()
+        _, nasics_in_cols = seg.number_of_asics_in_rows_cols()
+        nasicsf = nasics_in_cols
         x.shape = shape
         y.shape = shape
         z.shape = shape
         txt = header_crystfel()
         for n in range(nsegs):
-            txt += panel_constants_to_crystfel(seg, n, x[n,:], y[n,:], z[n,:])
+            txt = '\n'
+            for a,(r0,c0) in enumerate(seg.asic0indices()):
+                vfs = np.array((\
+                    x[r0,c0+acols-1] - x[r0,c0],\
+                    y[r0,c0+acols-1] - y[r0,c0],\
+                    z[r0,c0+acols-1] - z[r0,c0]))
+                vss = np.array((\
+                    x[r0+arows-1,c0] - x[r0,c0],\
+                    y[r0+arows-1,c0] - y[r0,c0],\
+                    z[r0+arows-1,c0] - z[r0,c0]))
+                nfs = vfs/np.linalg.norm(vfs)
+                nss = vss/np.linalg.norm(vss)
+
+                pref = '\np%da%d'%(n,a)
+
+                txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
+                    + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
+                    + '%s/res = %.3f' % (pref, 1e6/pix_size)\
+                    + '%s/corner_x = %.6f' % (pref, x[r0,c0]/pix_size)\
+                    + '%s/corner_y = %.6f' % (pref, y[r0,c0]/pix_size)\
+                    + '%s/coffset = %.6f' % (pref, z[r0,c0]*1e-6)\
+                    + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
+                    + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
+                    + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
+                    + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1)\
+                    + '%s/no_index = 0' % (pref)\
+                    + '\n'
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)

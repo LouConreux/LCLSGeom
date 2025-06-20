@@ -54,6 +54,33 @@ class ePix10kaQuad(Detector):
         self.pixel_size = pixel_size
         super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
 
+class Jungfrau05M(Detector):
+    """
+    PyFAI Detector instance for the Jungfrau05M
+    """
+
+    def __init__(
+        self,
+        pixel_size=None,
+        shape=None,
+        n_asics=8,
+        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
+        **kwargs,
+    ):
+        if pixel_size is None:
+            pixel_size = 0.000075
+        if shape is None:
+            shape = (512, 1024)
+        self.det_type = "jungfrau05M"
+        self.raw_shape = shape
+        self.n_modules = 1
+        self.n_asics = n_asics
+        self.asics_shape = asics_shape
+        self.ss_size = shape[0] // asics_shape[0]
+        self.fs_size = shape[1] // asics_shape[1]
+        self.pixel_size = pixel_size
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+
 class Jungfrau1M(Detector):
     """
     PyFAI Detector instance for the Jungfrau1M
@@ -70,7 +97,7 @@ class Jungfrau1M(Detector):
         if pixel_size is None:
             pixel_size = 0.000075
         if shape is None:
-            shape = (4, 512, 1024)
+            shape = (2, 512, 1024)
         self.det_type = "jungfrau1M"
         self.raw_shape = shape
         self.n_modules = shape[0]
@@ -176,6 +203,8 @@ def get_detector(det_type, pixel_size=None, shape=None):
         return ePix10k2M(pixel_size=pixel_size, shape=shape)
     elif "epix10kaquad" in det_type.lower():
         return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
+    elif det_type.lower() == "jungfrau05m":
+        return Jungfrau05M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau1m":
         return Jungfrau1M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau4m":

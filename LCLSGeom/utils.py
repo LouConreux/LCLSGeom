@@ -1,4 +1,5 @@
-import PSCalib.GlobalUtils as gu
+import getpass
+from time import strftime, localtime
 
 def str_to_int_or_float(s):
     """
@@ -44,6 +45,29 @@ def str_is_segment_and_asic(s):
         'p%sa%s' % (flds[0], flds[1]) if all([f.isdigit() for f in flds]) else\
         False
 
+def get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S', time=None):
+    """
+    Returns the current timestamp formatted according to the specified format.
+
+    Parameters
+    ----------
+    fmt : str, optional
+        The format string for the timestamp (default is '%Y-%m-%dT%H:%M:%S')
+    time : float, optional
+        The time in seconds since the epoch (default is None, which uses the current time)
+    """
+    return strftime(fmt, localtime(time))
+
+def get_login():
+    """
+    Returns the login name of the current user.
+
+    Parameters
+    ----------
+    None
+    """
+    return getpass.getuser()
+
 def header_psana(det_type):
     """
     Returns the header for the psana geometry file based on the detector type.
@@ -58,9 +82,9 @@ def header_psana(det_type):
     if det_type.lower() == 'rayonix':
         txt=\
         '# TITLE       Geometry parameters of Rayonix'\
-        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
-        +'\n# AUTHOR     %s' % gu.get_login()\
+        +'\n# AUTHOR     %s' % get_login()\
         +'\n# EXPERIMENT N\A'\
         +'\n# DETECTOR   Rayonix'\
         +'\n# CALIB_TYPE geometry'\
@@ -69,9 +93,9 @@ def header_psana(det_type):
     elif det_type.lower() == 'epix10k2m':
         txt=\
         '# TITLE       Geometry parameters of ePix10k2M'\
-        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
-        +'\n# AUTHOR     %s' % gu.get_login()\
+        +'\n# AUTHOR     %s' % get_login()\
         +'\n# EXPERIMENT N\A'\
         +'\n# DETECTOR   Epix10ka2M'\
         +'\n# CALIB_TYPE geometry'\
@@ -80,24 +104,57 @@ def header_psana(det_type):
     elif 'epix10kaquad' in det_type.lower():
         txt=\
         '# TITLE       Geometry parameters of ePix10kaQuad'\
-        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
-        +'\n# AUTHOR     %s' % gu.get_login()\
+        +'\n# AUTHOR     %s' % get_login()\
         +'\n# EXPERIMENT N\A'\
         +'\n# DETECTOR   %s' % det_type\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the ePix10kaQuad detector'\
         +'\n'
+    elif det_type.lower() == 'jungfrau05m':
+        txt=\
+        '# TITLE       Geometry parameters of Jungfrau1M'\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# METROLOGY  no metrology available'\
+        +'\n# AUTHOR     %s' % get_login()\
+        +'\n# EXPERIMENT N\A'\
+        +'\n# DETECTOR   DetLab.0:Jungfrau.0 or jungfrau05M'\
+        +'\n# CALIB_TYPE geometry'\
+        +'\n# COMMENT:01 Automatically created from BayFAI for the 1-segment Jungfrau1M detector'\
+        +'\n'
+    elif det_type.lower() == 'jungfrau1m':
+        txt=\
+        '# TITLE       Geometry parameters of Jungfrau1M'\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# METROLOGY  no metrology available'\
+        +'\n# AUTHOR     %s' % get_login()\
+        +'\n# EXPERIMENT N\A'\
+        +'\n# DETECTOR   DetLab.0:Jungfrau.1 or jungfrau1M'\
+        +'\n# CALIB_TYPE geometry'\
+        +'\n# COMMENT:01 Automatically created from BayFAI for the 2-segment Jungfrau1M detector'\
+        +'\n'
     elif det_type.lower() == 'jungfrau4m':
         txt=\
         '# TITLE       Geometry parameters of Jungfrau4M'\
-        +'\n# DATE_TIME  %s' % gu.str_tstamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
-        +'\n# AUTHOR     %s' % gu.get_login()\
+        +'\n# AUTHOR     %s' % get_login()\
         +'\n# EXPERIMENT N\A'\
         +'\n# DETECTOR   DetLab.0:Jungfrau.2 or jungfrau4M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
+        +'\n'
+    elif det_type.lower() == 'jungfrau16m':
+        txt=\
+        '# TITLE       Geometry parameters of Jungfrau16M'\
+        +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
+        +'\n# METROLOGY  no metrology available'\
+        +'\n# AUTHOR     %s' % get_login()\
+        +'\n# EXPERIMENT N\A'\
+        +'\n# DETECTOR   DetLab.0:Jungfrau.3 or jungfrau16M'\
+        +'\n# CALIB_TYPE geometry'\
+        +'\n# COMMENT:01 Automatically created from BayFAI for the 32-segment Jungfrau16M detector'\
         +'\n'
     txt +=\
         '\n# PARAM:01 PARENT     - name and version of the parent object'\
@@ -116,3 +173,26 @@ def header_psana(det_type):
         '\n'\
         '\n# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X'
     return txt
+
+def header_crystfel():
+    """
+    Returns the header for the CrystFEL geometry file.
+    The header includes information such as the title, date, author, experiment,
+    detector, calibration type, and comments.
+    """
+    return\
+    '\n; Geometry Constants generated by LCLSGeom'\
+    '\n'\
+    '\nclen =  /LCLS/detector_1/EncoderValue'\
+    '\nphoton_energy = /LCLS/photon_energy_eV'\
+    '\nadu_per_eV = 0.1'\
+    '\n'\
+    '\ndata = /entry_1/data_1/data'\
+    '\n'\
+    '\ndim0 = %'\
+    '\ndim1 = ss'\
+    '\ndim2 = fs'\
+    '\n'\
+    '\n; mask = /entry_1/data_1/mask'\
+    '\n; mask_good = 0x0000'\
+    '\n; mask_bad = 0xffff'
