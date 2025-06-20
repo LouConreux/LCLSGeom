@@ -9,8 +9,6 @@ class ePix10k2M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=4,
-        asics_shape = (2, 2), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
@@ -20,12 +18,12 @@ class ePix10k2M(Detector):
         self.det_type = "epix10k2M"
         self.raw_shape = shape
         self.n_modules = shape[0]
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.n_asics = 4
+        self.asics_shape = (2, 2)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class ePix10kaQuad(Detector):
     """
@@ -36,8 +34,6 @@ class ePix10kaQuad(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=4,
-        asics_shape = (2, 2), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
@@ -47,12 +43,12 @@ class ePix10kaQuad(Detector):
         self.det_type = "Epix10kaQuad"
         self.raw_shape = shape
         self.n_modules = shape[0]
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.n_asics = 4
+        self.asics_shape = (2, 2)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau05M(Detector):
     """
@@ -63,23 +59,21 @@ class Jungfrau05M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=8,
-        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
-            pixel_size = 0.000075
+            pixel_size = 0.0001
         if shape is None:
             shape = (512, 1024)
         self.det_type = "jungfrau05M"
         self.raw_shape = shape
         self.n_modules = 1
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[0] // asics_shape[0]
-        self.fs_size = shape[1] // asics_shape[1]
+        self.n_asics = 8
+        self.asics_shape = (2, 4)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau1M(Detector):
     """
@@ -90,8 +84,6 @@ class Jungfrau1M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=8,
-        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
@@ -101,12 +93,12 @@ class Jungfrau1M(Detector):
         self.det_type = "jungfrau1M"
         self.raw_shape = shape
         self.n_modules = shape[0]
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.n_asics = 8
+        self.asics_shape = (2, 4)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau4M(Detector):
     """
@@ -117,23 +109,21 @@ class Jungfrau4M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=8,
-        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
             pixel_size = 0.000075
         if shape is None:
             shape = (8, 512, 1024)
-        self.det_type = "jungfrau4M"
+        self.det_type = "jungfrau1M"
         self.raw_shape = shape
         self.n_modules = shape[0]
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.n_asics = 8
+        self.asics_shape = (2, 4)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class Jungfrau16M(Detector):
     """
@@ -144,23 +134,21 @@ class Jungfrau16M(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=8,
-        asics_shape=(2, 4), # (rows, cols) = (ss, fs)
         **kwargs,
     ):
         if pixel_size is None:
             pixel_size = 0.000075
         if shape is None:
             shape = (32, 512, 1024)
-        self.det_type = "jungfrau16M"
+        self.det_type = "jungfrau1M"
         self.raw_shape = shape
         self.n_modules = shape[0]
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[1] // asics_shape[0]
-        self.fs_size = shape[2] // asics_shape[1]
+        self.n_asics = 8
+        self.asics_shape = (2, 4)
+        self.ss_size = shape[1] // self.asics_shape[0]
+        self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 class Rayonix(Detector):
     """
@@ -172,8 +160,6 @@ class Rayonix(Detector):
         self,
         pixel_size=None,
         shape=None,
-        n_asics=1,
-        asics_shape=(1, 1),
         **kwargs,
     ):
         if pixel_size is None:
@@ -183,12 +169,12 @@ class Rayonix(Detector):
         self.det_type = "Rayonix"
         self.raw_shape = shape
         self.n_modules = 1
-        self.n_asics = n_asics
-        self.asics_shape = asics_shape
-        self.ss_size = shape[0] // asics_shape[0]
-        self.fs_size = shape[1] // asics_shape[1]
+        self.n_asics = 1
+        self.asics_shape = (1, 1)
+        self.ss_size = shape[0] // self.asics_shape[0]
+        self.fs_size = shape[1] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * asics_shape[0] * self.ss_size, asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
 
 def get_detector(det_type, pixel_size=None, shape=None):
     """
