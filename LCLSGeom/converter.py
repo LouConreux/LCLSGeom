@@ -49,13 +49,13 @@ class PsanaToCrystFEL:
             txt = '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
-                    x[r0,c0+acols-1] - x[r0,c0],\
-                    y[r0,c0+acols-1] - y[r0,c0],\
-                    z[r0,c0+acols-1] - z[r0,c0]))
+                    x[n,r0,c0+acols-1] - x[n,r0,c0],\
+                    y[n,r0,c0+acols-1] - y[n,r0,c0],\
+                    z[n,r0,c0+acols-1] - z[n,r0,c0]))
                 vss = np.array((\
-                    x[r0+arows-1,c0] - x[r0,c0],\
-                    y[r0+arows-1,c0] - y[r0,c0],\
-                    z[r0+arows-1,c0] - z[r0,c0]))
+                    x[n,r0+arows-1,c0] - x[n,r0,c0],\
+                    y[n,r0+arows-1,c0] - y[n,r0,c0],\
+                    z[n,r0+arows-1,c0] - z[n,r0,c0]))
                 nfs = vfs/np.linalg.norm(vfs)
                 nss = vss/np.linalg.norm(vss)
 
@@ -321,15 +321,17 @@ class PyFAIToCrystFEL:
         PyFAI detector instance
     params : list
         Detector parameters found by PyFAI calibration
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
     out_file : str
         Path to the output .geom file
     """
 
-    def __init__(self, detector, params, out_file):
+    def __init__(self, detector, params, psana_file, out_file):
         self.detector = detector
         self.params = params
         self.correct_geom()
-        self.convert_pyfai_to_geom(out_file=out_file)
+        self.convert_pyfai_to_geom(psana_file=psana_file, out_file=out_file)
     
     def pyfai_to_psana(self, x, y, z, params):
         """
@@ -380,27 +382,58 @@ class PyFAIToCrystFEL:
         self.Y = y
         self.Z = z
     
-    def convert_pyfai_to_geom(self, out_file):
+    def convert_pyfai_to_geom(self, psana_file, out_file):
         """
         From corrected X, Y, Z coordinates, write a CrystFEL .geom file
 
         Parameters
         ----------
+        psana_file : str
+            Path to the psana .data file for retrieving segmentation information
         output_file : str
             Path to the output .geom file
         """
-        X, Y, Z = self.X, self.Y, self.Z
-        seg = self.detector.sg
-        npanels = self.detector.n_modules
-        X = X.reshape(self.detector.raw_shape)
-        Y = Y.reshape(self.detector.raw_shape)
-        Z = Z.reshape(self.detector.raw_shape)
+        x = self.X.reshape(self.detector.raw_shape)
+        y = self.Y.reshape(self.detector.raw_shape)
+        z = self.Z.reshape(self.detector.raw_shape)
+        geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
+        geo1 = geo.get_seg_geo()
+        seg = geo1.algo
+        nsegs = int(x.size/seg.size())
+        arows, acols = seg.asic_rows_cols()
+        srows, _ = seg.shape()
+        pix_size = seg.pixel_scale_size()
+        _, nasics_in_cols = seg.number_of_asics_in_rows_cols()
+        nasicsf = nasics_in_cols
         txt = header_crystfel()
-        for n in range(npanels):
-            if npanels != 1:
-                txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
-            else:
-                txt += panel_constants_to_crystfel(seg, n, X, Y, Z)
+        for n in range(nsegs):
+            txt = '\n'
+            for a,(r0,c0) in enumerate(seg.asic0indices()):
+                vfs = np.array((\
+                    x[n,r0,c0+acols-1] - x[n,r0,c0],\
+                    y[n,r0,c0+acols-1] - y[n,r0,c0],\
+                    z[n,r0,c0+acols-1] - z[n,r0,c0]))
+                vss = np.array((\
+                    x[n,r0+arows-1,c0] - x[n,r0,c0],\
+                    y[n,r0+arows-1,c0] - y[n,r0,c0],\
+                    z[n,r0+arows-1,c0] - z[n,r0,c0]))
+                nfs = vfs/np.linalg.norm(vfs)
+                nss = vss/np.linalg.norm(vss)
+
+                pref = '\np%da%d'%(n,a)
+
+                txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
+                    + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
+                    + '%s/res = %.3f' % (pref, 1e6/pix_size)\
+                    + '%s/corner_x = %.6f' % (pref, x[r0,c0]/pix_size)\
+                    + '%s/corner_y = %.6f' % (pref, y[r0,c0]/pix_size)\
+                    + '%s/coffset = %.6f' % (pref, z[r0,c0]*1e-6)\
+                    + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
+                    + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
+                    + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
+                    + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1)\
+                    + '%s/no_index = 0' % (pref)\
+                    + '\n'
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
