@@ -64,9 +64,9 @@ class PsanaToCrystFEL:
                 txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
                     + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
                     + '%s/res = %.3f' % (pref, 1e6/pix_size)\
-                    + '%s/corner_x = %.6f' % (pref, x[r0,c0]/pix_size)\
-                    + '%s/corner_y = %.6f' % (pref, y[r0,c0]/pix_size)\
-                    + '%s/coffset = %.6f' % (pref, z[r0,c0]*1e-6)\
+                    + '%s/corner_x = %.6f' % (pref, x[n,r0,c0]/pix_size)\
+                    + '%s/corner_y = %.6f' % (pref, y[n,r0,c0]/pix_size)\
+                    + '%s/coffset = %.6f' % (pref, z[n,r0,c0]*1e-6)\
                     + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
                     + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
                     + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
@@ -425,9 +425,9 @@ class PyFAIToCrystFEL:
                 txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
                     + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
                     + '%s/res = %.3f' % (pref, 1e6/pix_size)\
-                    + '%s/corner_x = %.6f' % (pref, x[r0,c0]/pix_size)\
-                    + '%s/corner_y = %.6f' % (pref, y[r0,c0]/pix_size)\
-                    + '%s/coffset = %.6f' % (pref, z[r0,c0]*1e-6)\
+                    + '%s/corner_x = %.6f' % (pref, x[n,r0,c0]/pix_size)\
+                    + '%s/corner_y = %.6f' % (pref, y[n,r0,c0]/pix_size)\
+                    + '%s/coffset = %.6f' % (pref, z[n,r0,c0]*1e-6)\
                     + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
                     + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
                     + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
