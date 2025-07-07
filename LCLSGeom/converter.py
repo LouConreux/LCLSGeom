@@ -185,19 +185,19 @@ class PyFAIToPsana:
 
     Parameters
     ----------
-    detector : PyFAI detector instance
-        PyFAI detector instance
-    params : list
-        Detector parameters found by PyFAI calibration
+    poni_file : str
+        Path to the PyFAI .poni file containing detector geometry parameters
     psana_file : str
-        Path to the psana .data file for retrieving segmentation information
+        Path to the psana .data file from which to correct the geometry
     out_file : str
         Path to the output .psana file
     """
 
-    def __init__(self, detector, params, psana_file, out_file):
-        self.detector = detector
-        self.params = params
+    def __init__(self, poni_file, psana_file, out_file):
+        ai = pyFAI.load(poni_file)
+        converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector)
+        self.detector = converter.detector
+        self.params = ai.param
         self.correct_geom()
         self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
     
@@ -317,19 +317,19 @@ class PyFAIToCrystFEL:
 
     Parameters
     ----------
-    detector : PyFAI detector instance
-        PyFAI detector instance
-    params : list
-        Detector parameters found by PyFAI calibration
+    poni_file : str
+        Path to the PyFAI .poni file containing detector geometry parameters
     psana_file : str
-        Path to the psana .data file for retrieving segmentation information
+        Path to the psana .data file from which to correct the geometry
     out_file : str
         Path to the output .geom file
     """
 
-    def __init__(self, detector, params, psana_file, out_file):
-        self.detector = detector
-        self.params = params
+    def __init__(self, poni_file, psana_file, out_file):
+        ai = pyFAI.load(poni_file)
+        converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector)
+        self.detector = converter.detector
+        self.params = ai.param
         self.correct_geom()
         self.convert_pyfai_to_geom(psana_file=psana_file, out_file=out_file)
     
