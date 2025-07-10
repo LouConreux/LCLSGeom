@@ -427,19 +427,18 @@ class PyFAIToCrystFEL:
         output_file : str
             Path to the output .geom file
         """
-        X, Y, Z = self.X, self.Y, self.Z
+        x = self.X.reshape(self.detector.raw_shape)
+        y = self.Y.reshape(self.detector.raw_shape)
+        z = self.Z.reshape(self.detector.raw_shape)
         seg = self.detector.seg.algo
-        acols, arows = seg.asic_rows_cols()
+        nsegs = int(x.size/seg.size())
+        arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()
         pix_size = seg.pixel_scale_size()
         _, nasics_in_cols = seg.number_of_asics_in_rows_cols()
         nasicsf = nasics_in_cols
-        npanels = self.detector.n_modules
-        X = X.reshape(self.detector.raw_shape)
-        Y = Y.reshape(self.detector.raw_shape)
-        Z = Z.reshape(self.detector.raw_shape)
         txt = header_crystfel()
-        for n in range(npanels):
+        for n in range(nsegs):
             txt = '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
