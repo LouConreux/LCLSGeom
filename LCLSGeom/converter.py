@@ -428,17 +428,45 @@ class PyFAIToCrystFEL:
             Path to the output .geom file
         """
         X, Y, Z = self.X, self.Y, self.Z
-        seg = self.detector.sg
+        seg = self.detector.seg.algo
+        acols, arows = seg.asic_rows_cols()
+        srows, _ = seg.shape()
+        pix_size = seg.pixel_scale_size()
+        _, nasics_in_cols = seg.number_of_asics_in_rows_cols()
+        nasicsf = nasics_in_cols
         npanels = self.detector.n_modules
         X = X.reshape(self.detector.raw_shape)
         Y = Y.reshape(self.detector.raw_shape)
         Z = Z.reshape(self.detector.raw_shape)
         txt = header_crystfel()
         for n in range(npanels):
-            if npanels != 1:
-                txt += panel_constants_to_crystfel(seg, n, X[n,:], Y[n,:], Z[n,:])
-            else:
-                txt += panel_constants_to_crystfel(seg, n, X, Y, Z)
+            txt = '\n'
+            for a,(r0,c0) in enumerate(seg.asic0indices()):
+                vfs = np.array((\
+                    x[n,r0,c0+acols-1] - x[n,r0,c0],\
+                    y[n,r0,c0+acols-1] - y[n,r0,c0],\
+                    z[n,r0,c0+acols-1] - z[n,r0,c0]))
+                vss = np.array((\
+                    x[n,r0+arows-1,c0] - x[n,r0,c0],\
+                    y[n,r0+arows-1,c0] - y[n,r0,c0],\
+                    z[n,r0+arows-1,c0] - z[n,r0,c0]))
+                nfs = vfs/np.linalg.norm(vfs)
+                nss = vss/np.linalg.norm(vss)
+
+                pref = '\np%da%d'%(n,a)
+
+                txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
+                    + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
+                    + '%s/res = %.3f' % (pref, 1e6/pix_size)\
+                    + '%s/corner_x = %.6f' % (pref, x[n,r0,c0]/pix_size)\
+                    + '%s/corner_y = %.6f' % (pref, y[n,r0,c0]/pix_size)\
+                    + '%s/coffset = %.6f' % (pref, z[n,r0,c0]*1e-6)\
+                    + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
+                    + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
+                    + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
+                    + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1)\
+                    + '%s/no_index = 0' % (pref)\
+                    + '\n'
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
