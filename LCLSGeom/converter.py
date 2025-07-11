@@ -104,8 +104,6 @@ class PsanaToPyFAI:
         Run number
     detname : str
         Detector name
-    out_file : str
-        Path to the output CrystFEL .geom file
     """
 
     def __init__(self, exp, run_num, detname):
@@ -225,19 +223,29 @@ class PyFAIToPsana:
 
     Parameters
     ----------
-    detector : PyFAI detector instance
-        PyFAI detector instance
-    params : list
-        Detector parameters found by PyFAI calibration
-    psana_file : str
-        Path to the psana .data file for retrieving segmentation information
+    Parameters
+    ----------
+    in_file : str
+        Path to the input .poni file containing geometry calibration parameters
+    exp : str
+        Experiment tag
+    run_num : int
+        Run number
+    detname : str
+        Detector name
     out_file : str
-        Path to the output .psana file
+        Path to the output psana .data file
     """
 
-    def __init__(self, detector, params, out_file):
-        self.detector = detector
-        self.params = params
+    def __init__(self, in_file, exp, run_num, detname, out_file):
+        ai = pyFAI.load(in_file)
+        self.params = ai.param
+        ds = psana.DataSource(exp=exp, run=run_num)
+        run = next(ds.runs())
+        try:
+            self.det = run.Detector(detname)
+        except Exception as e:
+            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
         self.correct_geom()
         self.convert_pyfai_to_data(out_file=out_file)
     
@@ -351,21 +359,33 @@ class PyFAIToPsana:
 
 class PyFAIToCrystFEL:
     """
-    Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
+    Class to write CrystFEL .geom geometry files from PyFAI .poni files
 
     Parameters
     ----------
-    detector : PyFAI detector instance
-        PyFAI detector instance
-    params : list
-        Detector parameters found by PyFAI calibration
+    in_file : str
+        Path to the input .poni file containing geometry calibration parameters
+    exp : str
+        Experiment tag
+    run_num : int
+        Run number
+    detname : str
+        Detector name
     out_file : str
-        Path to the output .geom file
+        Path to the output CrystFEL .geom file
     """
 
-    def __init__(self, detector, params, out_file):
-        self.detector = detector
-        self.params = params
+    def __init__(self, in_file, exp, run_num, detname, out_file):
+        ai = pyFAI.load(in_file)
+        self.params = ai.param
+        ds = psana.DataSource(exp=exp, run=run_num)
+        run = next(ds.runs())
+        try:
+            self.det = run.Detector(detname)
+        except Exception as e:
+            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
+        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname)
+        self.detector = converter.detector
         self.correct_geom()
         self.convert_pyfai_to_geom(out_file=out_file)
     
