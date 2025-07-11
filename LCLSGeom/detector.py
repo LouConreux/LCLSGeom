@@ -27,7 +27,6 @@ class ePix10k2M(Detector):
             pixel1=pixel_size,
             pixel2=pixel_size,
             max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
-            orientation=0,
             **kwargs
         )
 
@@ -58,7 +57,6 @@ class ePix10kaQuad(Detector):
             pixel1=pixel_size,
             pixel2=pixel_size,
             max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
-            orientation=0,
             **kwargs
         )
 
@@ -114,7 +112,6 @@ class Jungfrau1M(Detector):
             pixel1=pixel_size,
             pixel2=pixel_size,
             max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
-            orientation=0,
             **kwargs
         )
 
@@ -176,7 +173,6 @@ class Jungfrau16M(Detector):
             pixel1=pixel_size,
             pixel2=pixel_size,
             max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
-            orientation=0,
             **kwargs
         )
 
@@ -208,7 +204,6 @@ class Rayonix(Detector):
             pixel1=pixel_size,
             pixel2=pixel_size,
             max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
-            orientation=0,
             **kwargs
         )
 
