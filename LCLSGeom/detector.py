@@ -186,18 +186,25 @@ def get_detector(det_type, pixel_size=None, shape=None):
         Detector type
     """
     if det_type.lower() == "epix10k2m":
+        Detector.registry["epix10k2M"] = ePix10k2M
         return ePix10k2M(pixel_size=pixel_size, shape=shape)
     elif "epix10kaquad" in det_type.lower():
+        Detector.registry["epix10kaQuad"] = ePix10kaQuad
         return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau05m":
+        Detector.registry["jungfrau05M"] = Jungfrau05M
         return Jungfrau05M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau1m":
+        Detector.registry["jungfrau1M"] = Jungfrau1M
         return Jungfrau1M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau4m":
+        Detector.registry["jungfrau4M"] = Jungfrau4M
         return Jungfrau4M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau16m":
+        Detector.registry["jungfrau16M"] = Jungfrau16M
         return Jungfrau16M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "rayonix":
+        Detector.registry["Rayonix"] = Rayonix
         return Rayonix(pixel_size=pixel_size, shape=shape)
     else:
         raise ValueError("Detector type not recognized")
