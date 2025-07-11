@@ -23,7 +23,13 @@ class ePix10k2M(Detector):
         self.ss_size = shape[1] // self.asics_shape[0]
         self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), orientation=0, **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 class ePix10kaQuad(Detector):
     """
@@ -48,7 +54,13 @@ class ePix10kaQuad(Detector):
         self.ss_size = shape[1] // self.asics_shape[0]
         self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), orientation=0, **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 class Jungfrau05M(Detector):
     """
@@ -98,7 +110,13 @@ class Jungfrau1M(Detector):
         self.ss_size = shape[1] // self.asics_shape[0]
         self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 class Jungfrau4M(Detector):
     """
@@ -123,7 +141,13 @@ class Jungfrau4M(Detector):
         self.ss_size = shape[1] // self.asics_shape[0]
         self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), orientation=0, **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 class Jungfrau16M(Detector):
     """
@@ -148,7 +172,13 @@ class Jungfrau16M(Detector):
         self.ss_size = shape[1] // self.asics_shape[0]
         self.fs_size = shape[2] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), orientation=0, **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 class Rayonix(Detector):
     """
@@ -174,7 +204,13 @@ class Rayonix(Detector):
         self.ss_size = shape[0] // self.asics_shape[0]
         self.fs_size = shape[1] // self.asics_shape[1]
         self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), orientation=0, **kwargs)
+        super().__init__(
+            pixel1=pixel_size,
+            pixel2=pixel_size,
+            max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size),
+            orientation=0,
+            **kwargs
+        )
 
 def get_detector(det_type, pixel_size=None, shape=None):
     """
@@ -186,18 +222,25 @@ def get_detector(det_type, pixel_size=None, shape=None):
         Detector type
     """
     if det_type.lower() == "epix10k2m":
+        Detector.registry["epix10k2m"] = ePix10k2M
         return ePix10k2M(pixel_size=pixel_size, shape=shape)
     elif "epix10kaquad" in det_type.lower():
+        Detector.registry["epix10kaquad"] = ePix10kaQuad
         return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau05m":
+        Detector.registry["jungfrau05m"] = Jungfrau05M
         return Jungfrau05M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau1m":
+        Detector.registry["jungfrau1m"] = Jungfrau1M
         return Jungfrau1M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau4m":
+        Detector.registry["jungfrau4m"] = Jungfrau4M
         return Jungfrau4M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau16m":
+        Detector.registry["jungfrau16m"] = Jungfrau16M
         return Jungfrau16M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "rayonix":
+        Detector.registry["rayonix"] = Rayonix
         return Rayonix(pixel_size=pixel_size, shape=shape)
     else:
         raise ValueError("Detector type not recognized")
