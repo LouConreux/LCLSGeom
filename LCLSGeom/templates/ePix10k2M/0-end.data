@@ -1,0 +1,28 @@
+# TITLE      Geometry parameters of ePix10k2M
+# DATE_TIME  2025-01-01T00:00:00 PST
+# METROLOGY  no metrology available'
+# AUTHOR     lconreux
+# EXPERIMENT any
+# DETECTOR   epix10k2M
+# CALIB_TYPE geometry
+# COMMENT:01 Manually created as an example for the 16-segment ePix10k2M detector'
+
+# HDR PARENT IND     OBJECT IND    X0[um]   Y0[um]   Z0[um]   ROT-Z  ROT-Y  ROT-X     TILT-Z    TILT-Y    TILT-X
+
+      CAMERA  0  EPIX10KA:V1  0    -58583    24251        5     270      0      0   -1.19826   0.11768  -0.03984
+      CAMERA  0  EPIX10KA:V1  1    -57864    64862       66     270      0      0   -1.16980  -0.22605   0.07420
+      CAMERA  0  EPIX10KA:V1  2    -16705    23716      -87     270      0      0   -0.88179  -0.04979  -0.06790
+      CAMERA  0  EPIX10KA:V1  3    -16091    64293        1     270      0      0   -1.12086  -0.09023  -0.10545
+      CAMERA  0  EPIX10KA:V1  4     24315    58774       -4     180      0      0   -0.94978  -0.01083  -0.15229
+      CAMERA  0  EPIX10KA:V1  5     64818    58098       -5     180      0      0   -0.94860  -0.02310  -0.14836
+      CAMERA  0  EPIX10KA:V1  6     23737    16960       35     180      0      0   -0.81313   0.10535  -0.22019
+      CAMERA  0  EPIX10KA:V1  7     64176    16289       15     180      0      0   -0.89935  -0.13787   0.18512
+      CAMERA  0  EPIX10KA:V1  8     58761   -24236      113      90      0      0   -1.18462  -0.05487  -0.00937
+      CAMERA  0  EPIX10KA:V1  9     58014   -65006      -75      90      0      0   -1.09273   0.06857  -0.19293
+      CAMERA  0  EPIX10KA:V1 10     16766   -23772     -150      90      0      0   -0.91635  -0.15069   0.04136
+      CAMERA  0  EPIX10KA:V1 11     16175   -64142       59      90      0      0   -0.92756  -0.14366  -0.04918
+      CAMERA  0  EPIX10KA:V1 12    -24466   -58939       17       0      0      0   -1.24074  -0.00144  -0.03904
+      CAMERA  0  EPIX10KA:V1 13    -65201   -58201       32       0      0      0   -0.90080   0.02960   0.23655
+      CAMERA  0  EPIX10KA:V1 14    -23760   -16774      -49       0      0      0   -0.66263  -0.27791  -0.04138
+      CAMERA  0  EPIX10KA:V1 15    -64091   -16171       24       0      0      0   -1.09707   0.02238  -0.01484
+          IP  0       CAMERA  0         0        0    10000      90      0      0    0.00000   0.00000   0.00000

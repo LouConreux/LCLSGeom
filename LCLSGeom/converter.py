@@ -494,25 +494,6 @@ class CrystFELToPsana:
             self.list_of_ignored_records.append(line)
             return
 
-    def str_list_of_comments(self):
-        return 'List of comments\n'\
-            + '\n'.join(self.list_of_comments)
-
-    def str_list_of_ignored_records(self):
-        return 'List of ignored records\n'\
-            + '\n'.join(self.list_of_ignored_records)
-
-    def str_dict_of_pars(self):
-        keys = sorted(self.dict_of_pars.keys())
-        msg = 'dict of parameters with top keys: %s' % ' '.join(keys)
-        for k in keys:
-            v = self.dict_of_pars[k]
-            if isinstance(v,dict):
-                msg += '\n%s: %s' % (k, str_is_segment_and_asic(k))
-                for k2,v2 in v.items(): msg += '\n    %s: %s' % (k2,v2)
-            else: msg += '\n%s: %s' % (k,v)
-        return msg
-
     def load_geom(self, in_file):
         self.valid = False
         self.list_of_comments = []
