@@ -185,7 +185,7 @@ class PyFAIToPsana:
 
     Parameters
     ----------
-    poni_file : str
+    in_file : str
         Path to the PyFAI .poni file containing detector geometry parameters
     psana_file : str
         Path to the psana .data file from which to correct the geometry
@@ -193,8 +193,8 @@ class PyFAIToPsana:
         Path to the output .psana file
     """
 
-    def __init__(self, poni_file, psana_file, out_file):
-        ai = pyFAI.load(poni_file)
+    def __init__(self, in_file, psana_file, out_file):
+        ai = pyFAI.load(in_file)
         converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector.name)
         self.detector = converter.detector
         self.params = ai.param
@@ -317,7 +317,7 @@ class PyFAIToCrystFEL:
 
     Parameters
     ----------
-    poni_file : str
+    in_file : str
         Path to the PyFAI .poni file containing detector geometry parameters
     psana_file : str
         Path to the psana .data file from which to correct the geometry
@@ -325,8 +325,8 @@ class PyFAIToCrystFEL:
         Path to the output .geom file
     """
 
-    def __init__(self, poni_file, psana_file, out_file):
-        ai = pyFAI.load(poni_file)
+    def __init__(self, in_file, psana_file, out_file):
+        ai = pyFAI.load(in_file)
         converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector.name)
         self.detector = converter.detector
         self.params = ai.param
