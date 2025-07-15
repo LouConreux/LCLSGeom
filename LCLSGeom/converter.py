@@ -238,14 +238,10 @@ class PyFAIToPsana:
     """
 
     def __init__(self, in_file, exp, run_num, detname, out_file):
+        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname)
+        self.detector = converter.detector
         ai = pyFAI.load(in_file)
         self.params = ai.param
-        ds = psana.DataSource(exp=exp, run=run_num)
-        run = next(ds.runs())
-        try:
-            self.det = run.Detector(detname)
-        except Exception as e:
-            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
         self.correct_geom()
         self.convert_pyfai_to_data(out_file=out_file)
     
@@ -376,16 +372,10 @@ class PyFAIToCrystFEL:
     """
 
     def __init__(self, in_file, exp, run_num, detname, out_file):
-        ai = pyFAI.load(in_file)
-        self.params = ai.param
-        ds = psana.DataSource(exp=exp, run=run_num)
-        run = next(ds.runs())
-        try:
-            self.det = run.Detector(detname)
-        except Exception as e:
-            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
         converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname)
         self.detector = converter.detector
+        ai = pyFAI.load(in_file)
+        self.params = ai.param
         self.correct_geom()
         self.convert_pyfai_to_geom(out_file=out_file)
     
@@ -622,7 +612,7 @@ class CrystFELToPsana:
             panelasics = detname_to_pars.get("epix10kaquad", None)
         else:
             panelasics = detname_to_pars.get(detname_lower, None)
-        self.geom_to_data(panelasics, detname, out_file)
+        self.geom_to_data(panelasics, out_file)
 
 class CrystFELToPyFAI:
     """
