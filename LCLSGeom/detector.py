@@ -186,25 +186,25 @@ def get_detector(det_type, pixel_size=None, shape=None):
         Detector type
     """
     if det_type.lower() == "epix10k2m":
-        Detector.registry["epix10k2M"] = ePix10k2M
+        Detector.registry["epix10k2m"] = ePix10k2M
         return ePix10k2M(pixel_size=pixel_size, shape=shape)
     elif "epix10kaquad" in det_type.lower():
-        Detector.registry["epix10kaQuad"] = ePix10kaQuad
+        Detector.registry["epix10kaquad"] = ePix10kaQuad
         return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau05m":
-        Detector.registry["jungfrau05M"] = Jungfrau05M
+        Detector.registry["jungfrau05m"] = Jungfrau05M
         return Jungfrau05M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau1m":
-        Detector.registry["jungfrau1M"] = Jungfrau1M
+        Detector.registry["jungfrau1m"] = Jungfrau1M
         return Jungfrau1M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau4m":
-        Detector.registry["jungfrau4M"] = Jungfrau4M
+        Detector.registry["jungfrau4m"] = Jungfrau4M
         return Jungfrau4M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "jungfrau16m":
-        Detector.registry["jungfrau16M"] = Jungfrau16M
+        Detector.registry["jungfrau16m"] = Jungfrau16M
         return Jungfrau16M(pixel_size=pixel_size, shape=shape)
     elif det_type.lower() == "rayonix":
-        Detector.registry["Rayonix"] = Rayonix
+        Detector.registry["rayonix"] = Rayonix
         return Rayonix(pixel_size=pixel_size, shape=shape)
     else:
         raise ValueError("Detector type not recognized")
