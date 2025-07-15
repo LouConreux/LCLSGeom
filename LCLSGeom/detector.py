@@ -118,16 +118,22 @@ def get_detector(shape):
         Detector type
     """
     if shape == (16, 352, 384):
+        Detector.registry["epix10k2m"] = ePix10k2M
         return ePix10k2M()
     elif shape == (4, 352, 384):
+        Detector.registry["epix10kaquad"] = ePix10kaQuad
         return ePix10kaQuad()
     elif shape == (1, 512, 1024):
+        Detector.registry["jungfrau05m"] = Jungfrau05M
         return Jungfrau05M()
     elif shape == (2, 512, 1024):
+        Detector.registry["jungfrau1m"] = Jungfrau1M
         return Jungfrau1M()
     elif shape == (8, 512, 1024):
+        Detector.registry["jungfrau4m"] = Jungfrau4M
         return Jungfrau4M()
     elif shape == (32, 512, 1024):
+        Detector.registry["jungfrau16m"] = Jungfrau16M
         return Jungfrau16M()
     else:
         raise ValueError("Detector type not recognized")
