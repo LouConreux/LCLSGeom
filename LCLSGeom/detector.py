@@ -135,7 +135,7 @@ class Jungfrau4M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (8, 512, 1024)
-        self.det_type = "jungfrau1M"
+        self.det_type = "jungfrau4M"
         self.raw_shape = shape
         self.n_modules = shape[0]
         self.n_asics = 8
@@ -165,7 +165,6 @@ class Jungfrau16M(Detector):
             pixel_size = 0.000075
         if shape is None:
             shape = (32, 512, 1024)
-        self.det_type = "jungfrau16M"
         self.det_type = "jungfrau16M"
         self.raw_shape = shape
         self.n_modules = shape[0]
