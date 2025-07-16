@@ -191,7 +191,7 @@ class PyFAIToPsana:
 
     def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
-        converter = PsanaToPyFAI(in_file=psana_file, shape=ai.detector.shape)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=tuple(ai.detector.shape))
         self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
@@ -323,7 +323,7 @@ class PyFAIToCrystFEL:
 
     def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
-        converter = PsanaToPyFAI(in_file=psana_file, shape=ai.detector.shape)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=tuple(ai.detector.shape))
         self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
