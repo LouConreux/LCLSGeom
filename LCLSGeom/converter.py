@@ -268,7 +268,7 @@ class PyFAIToPsana:
         X = self.X.reshape(self.detector.raw_shape)
         Y = self.Y.reshape(self.detector.raw_shape)
         Z = self.Z.reshape(self.detector.raw_shape)
-        recs = header_psana(det_type=self.detector.det_type)
+        recs = header_psana(detname=self.detector.detname)
         distance = self.params[0] * (1 / (np.cos(self.params[3] * np.cos(self.params[4]))))
         distance_um = round(distance * 1e6)
         for p in range(npanels):

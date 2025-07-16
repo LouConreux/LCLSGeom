@@ -68,18 +68,18 @@ def get_login():
     """
     return getpass.getuser()
 
-def header_psana(det_type):
+def header_psana(detname):
     """
-    Returns the header for the psana geometry file based on the detector type.
+    Returns the header for the psana geometry file based on the detector name.
     The header includes information such as the title, date, author, experiment,
     detector, calibration type, and comments.
 
     Parameters
     ----------
-    det_type : str
-        The type of detector (e.g., 'Rayonix', 'ePix10k2M', etc.)
+    detname : str
+        The name of the detector (e.g., 'Rayonix', 'ePix10k2M', etc.)
     """
-    if det_type.lower() == 'rayonix':
+    if detname.lower() == 'rayonix':
         txt=\
         '# TITLE       Geometry parameters of Rayonix'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
@@ -90,7 +90,7 @@ def header_psana(det_type):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the Rayonix detector'\
         +'\n'
-    elif det_type.lower() == 'epix10k2m':
+    elif detname.lower() == 'epix10k2m':
         txt=\
         '# TITLE       Geometry parameters of ePix10k2M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
@@ -101,18 +101,18 @@ def header_psana(det_type):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 16-segment ePix10k2M detector'\
         +'\n'
-    elif 'epix10kaquad' in det_type.lower():
+    elif 'epix10kaquad' in detname.lower():
         txt=\
         '# TITLE       Geometry parameters of ePix10kaQuad'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
         +'\n# EXPERIMENT N\A'\
-        +'\n# DETECTOR   %s' % det_type\
+        +'\n# DETECTOR   %s' % detname\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the ePix10kaQuad detector'\
         +'\n'
-    elif det_type.lower() == 'jungfrau05m':
+    elif detname.lower() == 'jungfrau05m':
         txt=\
         '# TITLE       Geometry parameters of Jungfrau1M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
@@ -123,7 +123,7 @@ def header_psana(det_type):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 1-segment Jungfrau1M detector'\
         +'\n'
-    elif det_type.lower() == 'jungfrau1m':
+    elif detname.lower() == 'jungfrau1m':
         txt=\
         '# TITLE       Geometry parameters of Jungfrau1M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
@@ -134,7 +134,7 @@ def header_psana(det_type):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 2-segment Jungfrau1M detector'\
         +'\n'
-    elif det_type.lower() == 'jungfrau4m':
+    elif detname.lower() == 'jungfrau4m':
         txt=\
         '# TITLE       Geometry parameters of Jungfrau4M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
@@ -145,7 +145,7 @@ def header_psana(det_type):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
         +'\n'
-    elif det_type.lower() == 'jungfrau16m':
+    elif detname.lower() == 'jungfrau16m':
         txt=\
         '# TITLE       Geometry parameters of Jungfrau16M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
