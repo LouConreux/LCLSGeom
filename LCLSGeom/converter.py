@@ -87,16 +87,12 @@ class PsanaToPyFAI:
     ----------
     in_file : str
         Path to the psana .data file
-    det_type : str
-        Detector type
-    pixel_size : float
-        Pixel size in meters
     shape : tuple
         Detector shape (n_modules, ss_size, fs_size)
     """
-    
-    def __init__(self, in_file, det_type, pixel_size=None, shape=None):
-        self.detector = get_detector(det_type=det_type, pixel_size=pixel_size, shape=shape)
+
+    def __init__(self, in_file, shape):
+        self.detector = get_detector(shape=shape)
         self.get_pixel_index_map(in_file=in_file)
         corner_array = self.get_pixel_corners(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
@@ -195,7 +191,7 @@ class PyFAIToPsana:
 
     def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
-        converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector.name)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=ai.detector.shape)
         self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
@@ -327,7 +323,7 @@ class PyFAIToCrystFEL:
 
     def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
-        converter = PsanaToPyFAI(in_file=psana_file, det_type=ai.detector.name)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=ai.detector.shape)
         self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
@@ -584,10 +580,10 @@ class CrystFELToPyFAI:
     shape : tuple
         Detector shape (n_modules, ss_size, fs_size)
     """
-    def __init__(self, in_file, det_type, psana_file, pixel_size=None, shape=None):
+    def __init__(self, in_file, det_type, psana_file, shape):
         path = os.path.dirname(in_file)
         data_file = os.path.join(path, "temp.data")
         CrystFELToPsana(in_file=in_file, det_type=det_type, psana_file=psana_file, out_file=data_file)
-        psana_to_pyfai = PsanaToPyFAI(in_file=data_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
+        psana_to_pyfai = PsanaToPyFAI(in_file=data_file, shape=shape)
         self.detector = psana_to_pyfai.detector
         os.remove(data_file)
