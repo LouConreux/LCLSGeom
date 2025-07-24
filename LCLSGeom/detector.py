@@ -7,23 +7,16 @@ class ePix10k2M(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.0001
-        if shape is None:
-            shape = (16, 352, 384)
-        self.det_type = "epix10k2M"
-        self.raw_shape = shape
-        self.n_modules = shape[0]
+        self.pixel_size = 0.0001
+        self.detname = "epix10k2M"
+        self.raw_shape = (16, 352, 384)
+        self.n_modules = self.raw_shape[0]
         self.n_asics = 4
         self.asics_shape = (2, 2)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class ePix10kaQuad(Detector):
     """
@@ -32,23 +25,16 @@ class ePix10kaQuad(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.0001
-        if shape is None:
-            shape = (4, 352, 384)
-        self.det_type = "Epix10kaQuad"
-        self.raw_shape = shape
-        self.n_modules = shape[0]
+        self.pixel_size = 0.0001
+        self.raw_shape = (4, 352, 384)
+        self.detname = "Epix10kaQuad"
+        self.n_modules = self.raw_shape[0]
         self.n_asics = 4
         self.asics_shape = (2, 2)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau05M(Detector):
     """
@@ -57,23 +43,16 @@ class Jungfrau05M(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.0001
-        if shape is None:
-            shape = (512, 1024)
-        self.det_type = "jungfrau05M"
-        self.raw_shape = shape
+        self.pixel_size = 0.000075
+        self.raw_shape = (512, 1024)
+        self.detname = "jungfrau05M"
         self.n_modules = 1
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[0] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[1] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau1M(Detector):
     """
@@ -82,23 +61,16 @@ class Jungfrau1M(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.000075
-        if shape is None:
-            shape = (2, 512, 1024)
-        self.det_type = "jungfrau1M"
-        self.raw_shape = shape
-        self.n_modules = shape[0]
+        self.pixel_size = 0.000075
+        self.raw_shape = (2, 512, 1024)
+        self.detname = "jungfrau1M"
+        self.n_modules = self.raw_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau4M(Detector):
     """
@@ -107,23 +79,16 @@ class Jungfrau4M(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.000075
-        if shape is None:
-            shape = (8, 512, 1024)
-        self.det_type = "jungfrau1M"
-        self.raw_shape = shape
-        self.n_modules = shape[0]
+        self.pixel_size = 0.000075
+        self.raw_shape = (8, 512, 1024)
+        self.detname = "jungfrau4M"
+        self.n_modules = self.raw_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau16M(Detector):
     """
@@ -132,51 +97,18 @@ class Jungfrau16M(Detector):
 
     def __init__(
         self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
     ):
-        if pixel_size is None:
-            pixel_size = 0.000075
-        if shape is None:
-            shape = (32, 512, 1024)
-        self.det_type = "jungfrau1M"
-        self.raw_shape = shape
-        self.n_modules = shape[0]
+        self.pixel_size = 0.000075
+        self.raw_shape = (32, 512, 1024)
+        self.detname = "jungfrau16M"
+        self.n_modules = self.raw_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = shape[1] // self.asics_shape[0]
-        self.fs_size = shape[2] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
+        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
+        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
-class Rayonix(Detector):
-    """
-    PyFAI Detector instance for the Rayonix
-    By default, the Rayonix detector is defined unbinned. The user can specify the pixel size and detector shape to bin the detector if wanted.
-    """
-
-    def __init__(
-        self,
-        pixel_size=None,
-        shape=None,
-        **kwargs,
-    ):
-        if pixel_size is None:
-            pixel_size = 0.000176
-        if shape is None:
-            shape = (1920, 1920)
-        self.det_type = "Rayonix"
-        self.raw_shape = shape
-        self.n_modules = 1
-        self.n_asics = 1
-        self.asics_shape = (1, 1)
-        self.ss_size = shape[0] // self.asics_shape[0]
-        self.fs_size = shape[1] // self.asics_shape[1]
-        self.pixel_size = pixel_size
-        super().__init__(pixel1=pixel_size, pixel2=pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size), **kwargs)
-
-def get_detector(det_type, pixel_size=None, shape=None):
+def get_detector(shape):
     """
     Instantiate a PyFAI Detector object based on the detector type
 
@@ -185,19 +117,23 @@ def get_detector(det_type, pixel_size=None, shape=None):
     det_type : str
         Detector type
     """
-    if det_type.lower() == "epix10k2m":
-        return ePix10k2M(pixel_size=pixel_size, shape=shape)
-    elif "epix10kaquad" in det_type.lower():
-        return ePix10kaQuad(pixel_size=pixel_size, shape=shape)
-    elif det_type.lower() == "jungfrau05m":
-        return Jungfrau05M(pixel_size=pixel_size, shape=shape)
-    elif det_type.lower() == "jungfrau1m":
-        return Jungfrau1M(pixel_size=pixel_size, shape=shape)
-    elif det_type.lower() == "jungfrau4m":
-        return Jungfrau4M(pixel_size=pixel_size, shape=shape)
-    elif det_type.lower() == "jungfrau16m":
-        return Jungfrau16M(pixel_size=pixel_size, shape=shape)
-    elif det_type.lower() == "rayonix":
-        return Rayonix(pixel_size=pixel_size, shape=shape)
+    if shape == (16, 352, 384):
+        Detector.registry["epix10k2m"] = ePix10k2M
+        return ePix10k2M()
+    elif shape == (4, 352, 384):
+        Detector.registry["epix10kaquad"] = ePix10kaQuad
+        return ePix10kaQuad()
+    elif shape == (1, 512, 1024):
+        Detector.registry["jungfrau05m"] = Jungfrau05M
+        return Jungfrau05M()
+    elif shape == (2, 512, 1024):
+        Detector.registry["jungfrau1m"] = Jungfrau1M
+        return Jungfrau1M()
+    elif shape == (8, 512, 1024):
+        Detector.registry["jungfrau4m"] = Jungfrau4M
+        return Jungfrau4M()
+    elif shape == (32, 512, 1024):
+        Detector.registry["jungfrau16m"] = Jungfrau16M
+        return Jungfrau16M()
     else:
         raise ValueError("Detector type not recognized")
