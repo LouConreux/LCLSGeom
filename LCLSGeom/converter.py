@@ -58,7 +58,7 @@ class PsanaToCrystFEL:
         y.shape = shape
         z.shape = shape
         txt = header_crystfel()
-        for n in range(nsegs):
+        for n in range(shape[0]):
             txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
