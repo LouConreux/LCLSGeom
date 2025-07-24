@@ -46,32 +46,32 @@ class PsanaToCrystFEL:
         z.shape = shape
         txt = header_crystfel()
         for n in range(nsegs):
-            txt = '\n'
+            txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
-                    x[r0,c0+acols-1] - x[r0,c0],\
-                    y[r0,c0+acols-1] - y[r0,c0],\
-                    z[r0,c0+acols-1] - z[r0,c0]))
+                    x[n,r0,c0+acols-1] - x[n,r0,c0],\
+                    y[n,r0,c0+acols-1] - y[n,r0,c0],\
+                    z[n,r0,c0+acols-1] - z[n,r0,c0]))
                 vss = np.array((\
-                    x[r0+arows-1,c0] - x[r0,c0],\
-                    y[r0+arows-1,c0] - y[r0,c0],\
-                    z[r0+arows-1,c0] - z[r0,c0]))
+                    x[n,r0+arows-1,c0] - x[n,r0,c0],\
+                    y[n,r0+arows-1,c0] - y[n,r0,c0],\
+                    z[n,r0+arows-1,c0] - z[n,r0,c0]))
                 nfs = vfs/np.linalg.norm(vfs)
                 nss = vss/np.linalg.norm(vss)
 
                 pref = '\np%da%d'%(n,a)
 
-                txt +='%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2])\
-                    + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2])\
-                    + '%s/res = %.3f' % (pref, 1e6/pix_size)\
-                    + '%s/corner_x = %.6f' % (pref, x[r0,c0]/pix_size)\
-                    + '%s/corner_y = %.6f' % (pref, y[r0,c0]/pix_size)\
-                    + '%s/coffset = %.6f' % (pref, z[r0,c0]*1e-6)\
-                    + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols)\
-                    + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1)\
-                    + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows)\
-                    + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1)\
-                    + '%s/no_index = 0' % (pref)\
+                txt += '%s/fs = %+.6fx %+.6fy %+.6fz' % (pref, nfs[0], nfs[1], nfs[2]) \
+                    + '%s/ss = %+.6fx %+.6fy %+.6fz' % (pref, nss[0], nss[1], nss[2]) \
+                    + '%s/res = %.3f' % (pref, 1e6/pix_size) \
+                    + '%s/corner_x = %.6f' % (pref, x[n,r0,c0]/pix_size) \
+                    + '%s/corner_y = %.6f' % (pref, y[n,r0,c0]/pix_size) \
+                    + '%s/coffset = %.6f' % (pref, z[n,r0,c0]*1e-6) \
+                    + '%s/min_fs = %d' % (pref, (a%nasicsf)*acols) \
+                    + '%s/max_fs = %d' % (pref, (a%nasicsf+1)*acols-1) \
+                    + '%s/min_ss = %d' % (pref, n*srows + (a//nasicsf)*arows) \
+                    + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1) \
+                    + '%s/no_index = 0' % (pref) \
                     + '\n'
         if out_file is not None:
             f = open(out_file,'w')
