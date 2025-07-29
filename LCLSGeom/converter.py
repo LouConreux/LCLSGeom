@@ -118,9 +118,9 @@ class PsanaToPyFAI:
             ds = psana.DataSource(exp=exp, run=run_num)
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        run = next(ds.runs())
+        runs = next(ds.runs())
         try:
-            self.det = run.Detector(detname)
+            self.det = runs.Detector(detname)
         except Exception as e:
             raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
         shape = self.det.raw._shape_total()
@@ -521,9 +521,9 @@ class CrystFELToPsana:
             ds = psana.DataSource(exp=exp, run=run_num)
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        run = next(ds.runs())
+        runs = next(ds.runs())
         try:
-            self.det = run.Detector(detname)
+            self.det = runs.Detector(detname)
         except Exception as e:
             raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
         self.convert_geom_to_data(detname=detname, out_file=out_file)
