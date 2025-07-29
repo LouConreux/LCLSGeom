@@ -115,11 +115,8 @@ class PsanaToPyFAI:
             ds = psana.DataSource(exp=exp, run=run_num)
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        print(f'Ds is here {ds}')
         runs = next(ds.runs())
-        print(f'Runs is here {runs}')
         self.det = runs.Detector(detname)
-        print(f'Detector is here {self.det}')
         shape = self.det.raw._shape_total()
         self.detector = get_detector(shape=shape)
         self.setup_detector()
