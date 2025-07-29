@@ -115,8 +115,11 @@ class PsanaToPyFAI:
             ds = psana.DataSource(exp=exp, run=run_num)
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
+        print(f'Ds is here {ds}')
         runs = next(ds.runs())
+        print(f'Runs is here {runs}')
         self.det = runs.Detector(detname)
+        print(f'Detector is here {self.det}')
         shape = self.det.raw._shape_total()
         self.detector = get_detector(shape=shape)
         self.setup_detector()
@@ -130,8 +133,8 @@ class PsanaToPyFAI:
         """
         self.detector.geo = self.det.raw._det_geo()
         self.detector.seg = self.det.raw._seg_geo
-        self.detector.detname = self.det.raw._det_name()
-        self.detector.segname = self.detector.seg.algo.oname
+        self.detector.detname = self.det.raw._det_name
+        self.detector.segname = self.detector.geo.get_seg_geo().oname
 
     def psana_to_pyfai(self, x, y, z):
         """
