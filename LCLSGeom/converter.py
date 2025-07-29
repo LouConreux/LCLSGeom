@@ -23,10 +23,15 @@ class PsanaToCrystFEL:
         Detector name
     out_file : str
         Path to the output CrystFEL .geom file
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
 
-    def __init__(self, exp, run_num, detname, out_file):
-        ds = psana.DataSource(exp=exp, run=run_num)
+    def __init__(self, exp, run_num, detname, out_file, dbsuffix=None):
+        if dbsuffix is None:
+            ds = psana.DataSource(exp=exp, run=run_num)
+        else:
+            ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
         run = next(ds.runs())
         try:
             self.det = run.Detector(detname)
@@ -104,10 +109,15 @@ class PsanaToPyFAI:
         Run number
     detname : str
         Detector name
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
 
-    def __init__(self, exp, run_num, detname):
-        ds = psana.DataSource(exp=exp, run=run_num)
+    def __init__(self, exp, run_num, detname, dbsuffix=None):
+        if dbsuffix is None:
+            ds = psana.DataSource(exp=exp, run=run_num)
+        else:
+            ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
         run = next(ds.runs())
         try:
             self.det = run.Detector(detname)
@@ -235,10 +245,12 @@ class PyFAIToPsana:
         Detector name
     out_file : str
         Path to the output psana .data file
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
 
-    def __init__(self, in_file, exp, run_num, detname, out_file):
-        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname)
+    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
+        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
         self.detector = converter.detector
         ai = pyFAI.load(in_file)
         self.params = ai.param
@@ -369,10 +381,12 @@ class PyFAIToCrystFEL:
         Detector name
     out_file : str
         Path to the output CrystFEL .geom file
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
 
-    def __init__(self, in_file, exp, run_num, detname, out_file):
-        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname)
+    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
+        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
         self.detector = converter.detector
         ai = pyFAI.load(in_file)
         self.params = ai.param
@@ -497,11 +511,16 @@ class CrystFELToPsana:
         Detector name
     out_file : str
         Path to the output psana .data file
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
-    def __init__(self, in_file, exp, run_num, detname, out_file):
+    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
         self.valid = False
         self.load_geom(in_file=in_file)
-        ds = psana.DataSource(exp=exp, run=run_num)
+        if dbsuffix is None:
+            ds = psana.DataSource(exp=exp, run=run_num)
+        else:
+            ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
         run = next(ds.runs())
         try:
             self.det = run.Detector(detname)
@@ -622,19 +641,19 @@ class CrystFELToPyFAI:
     ----------
     in_file : str
         Path to the CrystFEL .geom file
-    det_type : str
-        Detector type
-    psana_file : str
-        Path to the psana .data file for retrieving segmentation information
-    pixel_size : float
-        Pixel size in meters
-    shape : tuple
-        Detector shape (n_modules, ss_size, fs_size)
+    exp : str
+        Experiment tag
+    run_num : int
+        Run number
+    detname : str
+        Detector name
+    dbsuffix : str, optional
+        Database suffix for psana data source, by default None
     """
-    def __init__(self, in_file, det_type, psana_file, pixel_size=None, shape=None):
+    def __init__(self, in_file, exp, run_num, detname, dbsuffix=None):
         path = os.path.dirname(in_file)
         data_file = os.path.join(path, "temp.data")
-        CrystFELToPsana(in_file=in_file, det_type=det_type, psana_file=psana_file, out_file=data_file)
-        psana_to_pyfai = PsanaToPyFAI(in_file=data_file, det_type=det_type, pixel_size=pixel_size, shape=shape)
+        CrystFELToPsana(in_file=in_file, exp=exp, run_num=run_num, detname=detname, out_file=data_file, dbsuffix=dbsuffix)
+        psana_to_pyfai = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
         self.detector = psana_to_pyfai.detector
         os.remove(data_file)
