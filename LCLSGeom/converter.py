@@ -32,11 +32,8 @@ class PsanaToCrystFEL:
             ds = psana.DataSource(exp=exp, run=run_num)
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        run = next(ds.runs())
-        try:
-            self.det = run.Detector(detname)
-        except Exception as e:
-            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
+        runs = next(ds.runs())
+        self.det = runs.Detector(detname)
         self.convert_data_to_geom(out_file=out_file)
 
     def convert_data_to_geom(self, out_file):
@@ -119,10 +116,7 @@ class PsanaToPyFAI:
         else:
             ds = psana.DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
         runs = next(ds.runs())
-        try:
-            self.det = runs.Detector(detname)
-        except Exception as e:
-            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
+        self.det = runs.Detector(detname)
         shape = self.det.raw._shape_total()
         self.detector = get_detector(shape=shape)
         self.setup_detector()
