@@ -1,7 +1,7 @@
 import sys
 import os
 import argparse
-from LCLSGeom.converter import PsanaToCrystFEL, PsanaToPyFAI, CrystFELToPyFAI, PyFAIToCrystFEL, PyFAIToPsana, CrystFELToPsana
+from LCLSGeom.psana.converter import PsanaToCrystFEL, PsanaToPyFAI, CrystFELToPyFAI, PyFAIToCrystFEL, PyFAIToPsana, CrystFELToPsana
 
 def main():
     parser = argparse.ArgumentParser(description="Convert geometry files between different formats.")
