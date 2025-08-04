@@ -197,7 +197,7 @@ class PyFAIToPsana:
         self.correct_geom()
         self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -209,16 +209,7 @@ class PyFAIToPsana:
             Y coordinate in meters
         z : np.ndarray
             Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
         return -x, y, -z
 
@@ -240,7 +231,7 @@ class PyFAIToPsana:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(self.params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, self.params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
@@ -270,7 +261,7 @@ class PyFAIToPsana:
         Z = self.Z.reshape(self.detector.raw_shape)
         recs = header_psana(detname=self.detector.detname)
         distance = self.params[0] * (1 / (np.cos(self.params[3] * np.cos(self.params[4]))))
-        distance_um = round(distance * 1e6)
+        distance_um = -round(distance * 1e6)
         for p in range(npanels):
             if npanels != 1:
                 xp = X[p, :]
@@ -329,7 +320,7 @@ class PyFAIToCrystFEL:
         self.correct_geom()
         self.convert_pyfai_to_geom(psana_file=psana_file, out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -341,16 +332,7 @@ class PyFAIToCrystFEL:
             Y coordinate in meters
         z : np.ndarray
             Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
         return -x, y, -z
 
@@ -373,7 +355,7 @@ class PyFAIToCrystFEL:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
