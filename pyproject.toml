@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "LCLSGeom"
+version = "0.1.0"
+description = "Miscellaneous functions for converting geometry files for LCLS geometry calibrations and optimizations."
+readme = "README.md"
+authors = [
+    { name="Louis Conreux", email="louis.conreux1@gmail.com" }
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.6"
+dependencies = [
+    "numpy>=1.20.0",
+    "pyFAI>=0.20.0",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: Other/Proprietary License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/LouConreux/LCLSGeom"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
