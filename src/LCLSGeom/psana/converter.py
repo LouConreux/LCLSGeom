@@ -6,6 +6,7 @@ from LCLSGeom.psana.detector import get_detector
 from LCLSGeom.common.calib import detname_to_pars
 from LCLSGeom.common.utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
 from LCLSGeom.common.geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
+from PSCalib.GeometryAccess import GeometryAccess
 pyFAI.use_opencl = False
 
 class PsanaToCrystFEL:
@@ -27,7 +28,6 @@ class PsanaToCrystFEL:
         """
         Write a CrystFEL .geom file from a psana .data file using PSCalib.UtilsConvert functions
         """
-        from PSCalib.GeometryAccess import GeometryAccess
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -111,7 +111,6 @@ class PsanaToPyFAI:
         return -x, y, -z
 
     def get_pixel_index_map(self, in_file):
-        from PSCalib.GeometryAccess import GeometryAccess
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         temp_index = [np.asarray(t) for t in geo.get_pixel_coord_indexes()]
         pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
@@ -120,7 +119,6 @@ class PsanaToPyFAI:
         self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
     def get_pixel_corners(self, in_file):
-        from PSCalib.GeometryAccess import GeometryAccess
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -249,7 +247,6 @@ class PyFAIToPsana:
         out_file : str
             Path to the output .data file
         """
-        from PSCalib.GeometryAccess import GeometryAccess
         geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
         top = geom.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -374,7 +371,6 @@ class PyFAIToCrystFEL:
         output_file : str
             Path to the output .geom file
         """
-        from PSCalib.GeometryAccess import GeometryAccess
         x = self.X.reshape(self.detector.raw_shape)
         y = self.Y.reshape(self.detector.raw_shape)
         z = self.Z.reshape(self.detector.raw_shape)
@@ -493,7 +489,6 @@ class CrystFELToPsana:
         self.valid = True
 
     def geom_to_data(self, panelasics, detname, psana_file, out_file):
-        from PSCalib.GeometryAccess import GeometryAccess
         geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
