@@ -81,7 +81,7 @@ def header_psana(detname):
     """
     if detname.lower() == 'rayonix':
         txt=\
-        '# TITLE       Geometry parameters of Rayonix'\
+        '# TITLE      Geometry parameters of Rayonix'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -92,7 +92,7 @@ def header_psana(detname):
         +'\n'
     elif detname.lower() == 'epix10k2m':
         txt=\
-        '# TITLE       Geometry parameters of ePix10k2M'\
+        '# TITLE      Geometry parameters of ePix10k2M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -103,7 +103,7 @@ def header_psana(detname):
         +'\n'
     elif 'epix10kaquad' in detname.lower():
         txt=\
-        '# TITLE       Geometry parameters of ePix10kaQuad'\
+        '# TITLE      Geometry parameters of ePix10kaQuad'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -114,7 +114,7 @@ def header_psana(detname):
         +'\n'
     elif detname.lower() == 'jungfrau05m':
         txt=\
-        '# TITLE       Geometry parameters of Jungfrau1M'\
+        '# TITLE      Geometry parameters of Jungfrau1M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -125,7 +125,7 @@ def header_psana(detname):
         +'\n'
     elif detname.lower() == 'jungfrau1m':
         txt=\
-        '# TITLE       Geometry parameters of Jungfrau1M'\
+        '# TITLE      Geometry parameters of Jungfrau1M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -136,7 +136,7 @@ def header_psana(detname):
         +'\n'
     elif detname.lower() == 'jungfrau4m':
         txt=\
-        '# TITLE       Geometry parameters of Jungfrau4M'\
+        '# TITLE      Geometry parameters of Jungfrau4M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
@@ -147,7 +147,7 @@ def header_psana(detname):
         +'\n'
     elif detname.lower() == 'jungfrau16m':
         txt=\
-        '# TITLE       Geometry parameters of Jungfrau16M'\
+        '# TITLE      Geometry parameters of Jungfrau16M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\

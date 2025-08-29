@@ -2,11 +2,11 @@ import os
 import numpy as np
 from math import atan2, degrees
 import pyFAI
-from LCLSGeom.psana2.detector import get_detector
+from LCLSGeom.psana.detector import get_detector
 from LCLSGeom.common.calib import detname_to_pars
 from LCLSGeom.common.utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
 from LCLSGeom.common.geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
-from psana import DataSource
+from PSCalib.GeometryAccess import GeometryAccess
 pyFAI.use_opencl = False
 
 class PsanaToCrystFEL:
@@ -15,42 +15,27 @@ class PsanaToCrystFEL:
 
     Parameters
     ----------
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
-    detname : str
-        Detector name
+    in_file : str
+        Path to the psana .data file
     out_file : str
         Path to the output CrystFEL .geom file
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
     """
 
-    def __init__(self, exp, run_num, detname, out_file, dbsuffix=None):
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
-        else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        runs = next(ds.runs())
-        self.det = runs.Detector(detname)
-        self.convert_data_to_geom(out_file=out_file)
+    def __init__(self, in_file, out_file):
+        self.convert_data_to_geom(in_file=in_file, out_file=out_file)
 
-    def convert_data_to_geom(self, out_file):
+    def convert_data_to_geom(self, in_file, out_file):
         """
         Write a CrystFEL .geom file from a psana .data file using PSCalib.UtilsConvert functions
-
-        Parameters
-        ----------
-        out_file : str
-            Path to the output CrystFEL .geom file
         """
-        geo = self.det.raw._det_geo()
+        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
-        seg = self.det.raw._seg_geo
-        shape = self.det.raw._shape_total()
+        geo1 = geo.get_seg_geo()
+        seg = geo1.algo
+        nsegs = int(x.size/seg.size())
+        shape = (nsegs,) + seg.shape()
         arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()
         pix_size = seg.pixel_scale_size()
@@ -60,7 +45,7 @@ class PsanaToCrystFEL:
         y.shape = shape
         z.shape = shape
         txt = header_crystfel()
-        for n in range(shape[0]):
+        for n in range(nsegs):
             txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
@@ -100,51 +85,21 @@ class PsanaToPyFAI:
 
     Parameters
     ----------
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
-    detname : str
-        Detector name
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
+    in_file : str
+        Path to the psana .data file
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
     """
 
-    def __init__(self, exp, run_num, detname, dbsuffix=None):
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
-        else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        runs = next(ds.runs())
-        self.det = runs.Detector(detname)
-        shape = self.det.raw._shape_total()
+    def __init__(self, in_file, shape):
         self.detector = get_detector(shape=shape)
-        self.setup_detector()
-        self.get_pixel_index_map()
-        corner_array = self.get_pixel_corners()
+        self.get_pixel_index_map(in_file=in_file)
+        corner_array = self.get_pixel_corners(in_file=in_file)
         self.detector.set_pixel_corners(ary=corner_array)
-
-    def setup_detector(self):
-        """
-        Pass the detector segmentation and geometry info to the PyFAI detector instance
-        """
-        self.detector.geo = self.det.raw._det_geo()
-        self.detector.seg = self.det.raw._seg_geo
-        self.detector.detname = self.det.raw._det_name
-        self.detector.segname = self.detector.geo.get_seg_geo().oname
-
+    
     def psana_to_pyfai(self, x, y, z):
         """
         Convert psana coordinates to pyfai coordinates
-
-        Parameters
-        ----------
-        x : np.ndarray
-            X coordinate in micrometers
-        y : np.ndarray
-            Y coordinate in micrometers
-        z : np.ndarray
-            Z coordinate in micrometers
         """
         x = x * 1e-6
         y = y * 1e-6
@@ -155,23 +110,22 @@ class PsanaToPyFAI:
             z -= np.mean(z)
         return -x, y, -z
 
-    def get_pixel_index_map(self):
-        """
-        Create a pixel index map for assembling the detector
-        """
-        temp_index = [np.asarray(t) for t in self.detector.geo.get_pixel_coord_indexes()]
+    def get_pixel_index_map(self, in_file):
+        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
+        temp_index = [np.asarray(t) for t in geo.get_pixel_coord_indexes()]
         pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
         pixel_index_map[..., 0] = temp_index[0][0]
         pixel_index_map[..., 1] = temp_index[1][0]
         self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
-    def get_pixel_corners(self):
-        """
-        Compute the pixel corners in the PyFAI reference frame
-        """
-        geo = self.detector.geo
+    def get_pixel_corners(self, in_file):
+        geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
+        seg = geo.get_seg_geo()
+        sg = seg.algo
+        self.detector.segname = seg.oname
+        self.detector.sg = sg
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
         x, y, z = self.psana_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
@@ -227,31 +181,23 @@ class PyFAIToPsana:
 
     Parameters
     ----------
-    Parameters
-    ----------
     in_file : str
-        Path to the input .poni file containing geometry calibration parameters
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
-    detname : str
-        Detector name
+        Path to the PyFAI .poni file containing detector geometry parameters
+    psana_file : str
+        Path to the psana .data file from which to correct the geometry
     out_file : str
-        Path to the output psana .data file
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
+        Path to the output .psana file
     """
 
-    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
-        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
-        self.detector = converter.detector
+    def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=tuple(ai.detector.shape))
+        self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
-        self.convert_pyfai_to_data(out_file=out_file)
+        self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -263,16 +209,7 @@ class PyFAIToPsana:
             Y coordinate in meters
         z : np.ndarray
             Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
         return -x, y, -z
 
@@ -294,22 +231,24 @@ class PyFAIToPsana:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(self.params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, self.params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
 
-    def convert_pyfai_to_data(self, out_file):
+    def convert_pyfai_to_data(self, psana_file, out_file):
         """
         Main function to convert PyFAI coordinates to psana .data geometry file
 
         Parameters
         ----------
+        psana_file : str
+            Path to the input .data file
         out_file : str
             Path to the output .data file
         """
-        geo = self.detector.geo
-        top = geo.get_top_geo()
+        geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
+        top = geom.get_top_geo()
         child = top.get_list_of_children()[0]
         topname = top.oname
         childname = child.oname
@@ -342,7 +281,7 @@ class PyFAIToPsana:
                 zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
             nfs = vfs / np.linalg.norm(vfs)
             nss = vss / np.linalg.norm(vss)
-            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
+            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)+distance_um)
             angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
             angle_z, tilt_z = angle_and_tilt(angle_deg_z)
             tilt_x, tilt_y = tilt_xy(nfs, nss)
@@ -354,40 +293,34 @@ class PyFAIToPsana:
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
         recs += '\n%12s  0 %12s  0' %(topname, childname)\
-            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance_um)
+            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (-distance_um)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
 
 class PyFAIToCrystFEL:
     """
-    Class to write CrystFEL .geom geometry files from PyFAI .poni files
+    Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
 
     Parameters
     ----------
     in_file : str
-        Path to the input .poni file containing geometry calibration parameters
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
-    detname : str
-        Detector name
+        Path to the PyFAI .poni file containing detector geometry parameters
+    psana_file : str
+        Path to the psana .data file from which to correct the geometry
     out_file : str
-        Path to the output CrystFEL .geom file
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
+        Path to the output .geom file
     """
 
-    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
-        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
-        self.detector = converter.detector
+    def __init__(self, in_file, psana_file, out_file):
         ai = pyFAI.load(in_file)
+        converter = PsanaToPyFAI(in_file=psana_file, shape=tuple(ai.detector.shape))
+        self.detector = converter.detector
         self.params = ai.param
         self.correct_geom()
-        self.convert_pyfai_to_geom(out_file=out_file)
+        self.convert_pyfai_to_geom(psana_file=psana_file, out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -399,16 +332,7 @@ class PyFAIToCrystFEL:
             Y coordinate in meters
         z : np.ndarray
             Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
         return -x, y, -z
 
@@ -431,24 +355,28 @@ class PyFAIToCrystFEL:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
     
-    def convert_pyfai_to_geom(self, out_file):
+    def convert_pyfai_to_geom(self, psana_file, out_file):
         """
         From corrected X, Y, Z coordinates, write a CrystFEL .geom file
 
         Parameters
         ----------
+        psana_file : str
+            Path to the psana .data file for retrieving segmentation information
         output_file : str
             Path to the output .geom file
         """
         x = self.X.reshape(self.detector.raw_shape)
         y = self.Y.reshape(self.detector.raw_shape)
         z = self.Z.reshape(self.detector.raw_shape)
-        seg = self.detector.seg.algo
+        geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
+        geo1 = geo.get_seg_geo()
+        seg = geo1.algo
         nsegs = int(x.size/seg.size())
         arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()
@@ -491,36 +419,23 @@ class PyFAIToCrystFEL:
 
 class CrystFELToPsana:
     """
-    Class to convert CrystFEL .geom geometry files to psana .data geometry files thanks to det_type information
+    Class to convert CrystFEL .geom geometry files to psana .data geometry files thanks to detector information
 
     Parameters
     ----------
     in_file : str
         Path to the CrystFEL .geom file
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
     detname : str
         Detector name
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
     out_file : str
         Path to the output psana .data file
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
     """
-    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
+    def __init__(self, in_file, detname, psana_file, out_file):
         self.valid = False
         self.load_geom(in_file=in_file)
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
-        else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
-        runs = next(ds.runs())
-        try:
-            self.det = runs.Detector(detname)
-        except Exception as e:
-            raise ValueError(f"Detector {detname} not found in run {run_num} of experiment {exp}. Error: {e}")
-        self.convert_geom_to_data(detname=detname, out_file=out_file)
+        self.convert_geom_to_data(detname=detname, psana_file=psana_file, out_file=out_file)
 
     def _parse_line_as_parameter(self, line):
         assert isinstance(line, str), 'line is not a str object'
@@ -573,8 +488,8 @@ class CrystFELToPsana:
         f.close()
         self.valid = True
 
-    def geom_to_data(self, panelasics, out_file):
-        geo = self.det.raw._det_geo()
+    def geom_to_data(self, panelasics, detname, psana_file, out_file):
+        geo = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         topname = top.oname
@@ -587,7 +502,7 @@ class CrystFELToPsana:
         M_TO_UM = 1e6
         xc0, yc0, _ = X[0,0], Y[0,0], Z[0,0]
         distance = self.dict_of_pars.get('coffset', 0)
-        recs = header_psana(detname=self.det.raw._det_name())
+        recs = header_psana(detname=detname)
         segz = np.array([self.dict_of_pars[k].get('coffset', 0) for k in panelasics.split(',')])
         meanroundz = round(segz.mean()*1e6)*1e-6
         distance += meanroundz
@@ -619,13 +534,16 @@ class CrystFELToPsana:
         f.write(recs)
         f.close()
 
-    def convert_geom_to_data(self, detname, out_file):
+    def convert_geom_to_data(self, detname, psana_file, out_file):
         detname_lower = detname.lower()
         if "epix10kaquad" in detname_lower:
-            panelasics = detname_to_pars.get("epix10kaquad", None)
+            detname_lower = "epix10kaquad"
+            panelasics = detname_to_pars.get(detname_lower, None)
+        elif detname_lower == "rayonix":
+            panelasics = 'p0a0'
         else:
             panelasics = detname_to_pars.get(detname_lower, None)
-        self.geom_to_data(panelasics, out_file)
+        self.geom_to_data(panelasics, detname, psana_file, out_file)
 
 class CrystFELToPyFAI:
     """
@@ -635,19 +553,19 @@ class CrystFELToPyFAI:
     ----------
     in_file : str
         Path to the CrystFEL .geom file
-    exp : str
-        Experiment tag
-    run_num : int
-        Run number
     detname : str
         Detector name
-    dbsuffix : str, optional
-        Database suffix for psana data source, by default None
+    psana_file : str
+        Path to the psana .data file for retrieving segmentation information
+    pixel_size : float
+        Pixel size in meters
+    shape : tuple
+        Detector shape (n_modules, ss_size, fs_size)
     """
-    def __init__(self, in_file, exp, run_num, detname, dbsuffix=None):
+    def __init__(self, in_file, detname, psana_file, shape):
         path = os.path.dirname(in_file)
         data_file = os.path.join(path, "temp.data")
-        CrystFELToPsana(in_file=in_file, exp=exp, run_num=run_num, detname=detname, out_file=data_file, dbsuffix=dbsuffix)
-        psana_to_pyfai = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
+        CrystFELToPsana(in_file=in_file, detname=detname, psana_file=psana_file, out_file=data_file)
+        psana_to_pyfai = PsanaToPyFAI(in_file=data_file, shape=shape)
         self.detector = psana_to_pyfai.detector
         os.remove(data_file)
