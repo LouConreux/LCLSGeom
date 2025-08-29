@@ -321,7 +321,7 @@ class PyFAIToPsana:
         Y = self.Y.reshape(self.detector.raw_shape)
         Z = self.Z.reshape(self.detector.raw_shape)
         recs = header_psana(detname=self.detector.detname)
-        distance = self.params[0] * (1 / (np.cos(self.params[3] * np.cos(self.params[4]))))
+        distance = np.mean(Z)
         distance_um = round(distance * 1e6)
         for p in range(npanels):
             if npanels != 1:
@@ -342,7 +342,7 @@ class PyFAIToPsana:
                 zp[ss_size * asics_shape[0] - 1,0] - zp[0, 0]))
             nfs = vfs / np.linalg.norm(vfs)
             nss = vss / np.linalg.norm(vss)
-            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)+distance_um)
+            vcent = (np.mean(xp), np.mean(yp), np.mean(zp)-distance_um)
             angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
             angle_z, tilt_z = angle_and_tilt(angle_deg_z)
             tilt_x, tilt_y = tilt_xy(nfs, nss)
@@ -354,7 +354,7 @@ class PyFAIToPsana:
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
         recs += '\n%12s  0 %12s  0' %(topname, childname)\
-            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (-distance_um)
+            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance_um)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
