@@ -2,7 +2,7 @@ import os
 import numpy as np
 from math import atan2, degrees
 import pyFAI
-from LCLSGeom.psana.detector import get_detector
+from LCLSGeom.common.detector import get_detector
 from LCLSGeom.common.calib import detname_to_pars
 from LCLSGeom.common.header import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
 from LCLSGeom.common.geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
