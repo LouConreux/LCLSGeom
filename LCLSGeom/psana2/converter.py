@@ -243,9 +243,8 @@ class PyFAIToPsana:
         Database suffix for psana data source, by default None
     """
 
-    def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
-        converter = PsanaToPyFAI(exp=exp, run_num=run_num, detname=detname, dbsuffix=dbsuffix)
-        self.detector = converter.detector
+    def __init__(self, in_file, detector, out_file):
+        self.detector = detector
         ai = pyFAI.load(in_file)
         self.params = ai.param
         self.correct_geom()

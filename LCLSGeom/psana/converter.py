@@ -123,9 +123,9 @@ class PsanaToPyFAI:
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         seg = geo.get_seg_geo()
-        sg = seg.algo
+        self.detector.geo = geo
+        self.detector.seg = seg
         self.detector.segname = seg.oname
-        self.detector.sg = sg
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
         x, y, z = self.psana_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
@@ -183,20 +183,19 @@ class PyFAIToPsana:
     ----------
     in_file : str
         Path to the PyFAI .poni file containing detector geometry parameters
-    psana_file : str
-        Path to the psana .data file from which to correct the geometry
+    detector : pyFAI.Detector
+        PyFAI detector instance
     out_file : str
         Path to the output .psana file
     """
 
-    def __init__(self, in_file, psana_file, out_file):
+    def __init__(self, in_file, detector, out_file):
         ai = pyFAI.load(in_file)
-        converter = PsanaToPyFAI(in_file=psana_file, shape=tuple(ai.detector.shape))
-        self.detector = converter.detector
+        self.detector = detector
         self.params = ai.param
         self.correct_geom()
-        self.convert_pyfai_to_data(psana_file=psana_file, out_file=out_file)
-    
+        self.convert_pyfai_to_data(out_file=out_file)
+
     def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
@@ -236,19 +235,17 @@ class PyFAIToPsana:
         self.Y = y
         self.Z = z
 
-    def convert_pyfai_to_data(self, psana_file, out_file):
+    def convert_pyfai_to_data(self, out_file):
         """
         Main function to convert PyFAI coordinates to psana .data geometry file
 
         Parameters
         ----------
-        psana_file : str
-            Path to the input .data file
         out_file : str
             Path to the output .data file
         """
-        geom = GeometryAccess(path=psana_file, pbits=0, use_wide_pix_center=False)
-        top = geom.get_top_geo()
+        geo = self.detector.geo
+        top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         topname = top.oname
         childname = child.oname
