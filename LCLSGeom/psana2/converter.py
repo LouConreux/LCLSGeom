@@ -28,10 +28,10 @@ class PsanaToCrystFEL:
     """
 
     def __init__(self, exp, run_num, detname, out_file, dbsuffix=None):
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
+        if dbsuffix:
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname], dbsuffix=dbsuffix)
         else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname])
         runs = next(ds.runs())
         self.det = runs.Detector(detname)
         self.convert_data_to_geom(out_file=out_file)
@@ -111,10 +111,10 @@ class PsanaToPyFAI:
     """
 
     def __init__(self, exp, run_num, detname, dbsuffix=None):
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
+        if dbsuffix:
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname], dbsuffix=dbsuffix)
         else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname])
         runs = next(ds.runs())
         self.det = runs.Detector(detname)
         shape = self.det.raw._shape_total()
@@ -509,10 +509,10 @@ class CrystFELToPsana:
     def __init__(self, in_file, exp, run_num, detname, out_file, dbsuffix=None):
         self.valid = False
         self.load_geom(in_file=in_file)
-        if dbsuffix is None:
-            ds = DataSource(exp=exp, run=run_num)
+        if dbsuffix:
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname], dbsuffix=dbsuffix)
         else:
-            ds = DataSource(exp=exp, run=run_num, detectors=[detname], dbsuffix=dbsuffix)
+            ds = DataSource(exp=exp, run=run_num, skip_calib_load='all', detectors=[detname])
         runs = next(ds.runs())
         try:
             self.det = runs.Detector(detname)
