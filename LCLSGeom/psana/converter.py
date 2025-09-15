@@ -90,7 +90,8 @@ class PsanaToPyFAI:
 
     def __init__(self, in_file):
         self.geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
-        self.detector = get_detector(shape=self.geo.shape3d())
+        x, _, _ = self.geo.get_pixel_coords()
+        self.detector = get_detector(shape=x.shape)
         self.setup_detector()
         self.get_pixel_index_map()
         corner_array = self.get_pixel_corners()

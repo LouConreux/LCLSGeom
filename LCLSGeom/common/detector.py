@@ -110,12 +110,12 @@ class Jungfrau16M(Detector):
 
 def get_detector(shape):
     """
-    Instantiate a PyFAI Detector object based on stacked shape.
+    Instantiate a PyFAI Detector object based on unassembled shape.
 
     Parameters
     ----------
     shape : tuple
-        Stacked shape of the detector
+        Unassembled shape
     """
     if shape == (16, 352, 384):
         Detector.registry["epix10k2m"] = ePix10k2M
