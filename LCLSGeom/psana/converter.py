@@ -90,13 +90,24 @@ class PsanaToPyFAI:
 
     def __init__(self, in_file):
         self.geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
-        x, _, _ = self.geo.get_pixel_coords()
-        self.detector = get_detector(shape=x.shape)
+        shape = self.shape3d()
+        self.detector = get_detector(shape=shape)
         self.setup_detector()
         self.get_pixel_index_map()
         corner_array = self.get_pixel_corners()
         self.detector.set_pixel_corners(ary=corner_array)
     
+    def shape3d(self):
+        """
+        Return 3d shape of the arrays as (<number-of-segments>, <rows>, <cols>)
+        """
+        sg = self.geo.get_seg_geo().algo
+        sshape = sg.shape()
+        ssize = sg.size()
+        x,_,_ = self.geo.get_pixel_coords()
+        dsize = x.size
+        return (int(dsize/ssize), sshape[0], sshape[1])
+
     def setup_detector(self):
         """
         Pass the detector segmentation and geometry info to the PyFAI detector instance
