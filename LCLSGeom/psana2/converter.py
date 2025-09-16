@@ -418,7 +418,7 @@ class PyFAIToCrystFEL:
         x = self.X.reshape(self.detector.raw_shape)
         y = self.Y.reshape(self.detector.raw_shape)
         z = self.Z.reshape(self.detector.raw_shape)
-        seg = self.detector.seg.algo
+        seg = self.detector.seg
         nsegs = int(x.size/seg.size())
         arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()
