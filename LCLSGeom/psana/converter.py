@@ -32,8 +32,8 @@ class PsanaToCrystFEL:
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
         x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
-        geo1 = geo.get_seg_geo()
-        seg = geo1.algo
+        seg_geo = geo.get_seg_geo()
+        seg = seg_geo.algo
         nsegs = int(x.size/seg.size())
         shape = (nsegs,) + seg.shape()
         arows, acols = seg.asic_rows_cols()
@@ -101,9 +101,9 @@ class PsanaToPyFAI:
         """
         Return 3d shape of the arrays as (<number-of-segments>, <rows>, <cols>)
         """
-        sg = self.geo.get_seg_geo().algo
-        sshape = sg.shape()
-        ssize = sg.size()
+        seg = self.geo.get_seg_geo().algo
+        sshape = seg.shape()
+        ssize = seg.size()
         x,_,_ = self.geo.get_pixel_coords()
         dsize = x.size
         return (int(dsize/ssize), sshape[0], sshape[1])
@@ -113,7 +113,7 @@ class PsanaToPyFAI:
         Pass the detector segmentation and geometry info to the PyFAI detector instance
         """
         self.detector.geo = self.geo
-        self.detector.seg = self.geo.get_seg_geo().algo
+        self.detector.seg_geo = self.geo.get_seg_geo()
         self.detector.segname = self.geo.get_seg_geo().oname
 
     def psana_to_pyfai(self, x, y, z):
@@ -262,6 +262,9 @@ class PyFAIToPsana:
         out_file : str
             Path to the output .data file
         """
+        X = self.X.reshape(self.detector.raw_shape)
+        Y = self.Y.reshape(self.detector.raw_shape)
+        Z = self.Z.reshape(self.detector.raw_shape)
         geo = self.detector.geo
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -271,16 +274,12 @@ class PyFAIToPsana:
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
-        X = self.X.reshape(self.detector.raw_shape)
-        Y = self.Y.reshape(self.detector.raw_shape)
-        Z = self.Z.reshape(self.detector.raw_shape)
         recs = header_psana(detname=self.detector.detname)
         distance = round(np.mean(Z))
         for p in range(npanels):
             if npanels != 1:
                 xp = X[p, :]
                 yp = Y[p, :]
-                zp = Z[p, :]
             else:
                 xp = X
                 yp = Y
@@ -387,7 +386,7 @@ class PyFAIToCrystFEL:
         x = self.X.reshape(self.detector.raw_shape)
         y = self.Y.reshape(self.detector.raw_shape)
         z = self.Z.reshape(self.detector.raw_shape)
-        seg = self.detector.seg
+        seg = self.detector.seg_geo.algo
         nsegs = int(x.size/seg.size())
         arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()
@@ -506,11 +505,11 @@ class CrystFELToPsana:
         child = top.get_list_of_children()[0]
         topname = top.oname
         childname = child.oname
-        seg = geo.get_seg_geo()
-        sg = seg.algo
-        segname = seg.oname
-        X, Y, Z = sg.pixel_coord_array()
-        PIX_SIZE_UM = sg.get_pix_size_um()
+        seg_geo = geo.get_seg_geo()
+        seg = seg_geo.algo
+        segname = seg_geo.oname
+        X, Y, Z = seg.pixel_coord_array()
+        PIX_SIZE_UM = seg.get_pix_size_um()
         M_TO_UM = 1e6
         xc0, yc0, _ = X[0,0], Y[0,0], Z[0,0]
         distance = self.dict_of_pars.get('coffset', 0)

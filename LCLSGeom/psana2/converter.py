@@ -286,6 +286,9 @@ class PyFAIToPsana:
         out_file : str
             Path to the output .data file
         """
+        X = self.X.reshape(self.detector.raw_shape)
+        Y = self.Y.reshape(self.detector.raw_shape)
+        Z = self.Z.reshape(self.detector.raw_shape)
         geo = self.detector.geo
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -295,9 +298,6 @@ class PyFAIToPsana:
         asics_shape = self.detector.asics_shape
         fs_size = self.detector.fs_size
         ss_size = self.detector.ss_size
-        X = self.X.reshape(self.detector.raw_shape)
-        Y = self.Y.reshape(self.detector.raw_shape)
-        Z = self.Z.reshape(self.detector.raw_shape)
         recs = header_psana(detname=self.detector.detname)
         distance = round(np.mean(Z))
         for p in range(npanels):
