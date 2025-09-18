@@ -280,6 +280,7 @@ class PyFAIToPsana:
             if npanels != 1:
                 xp = X[p, :]
                 yp = Y[p, :]
+                zp = Z[p, :]
             else:
                 xp = X
                 yp = Y
