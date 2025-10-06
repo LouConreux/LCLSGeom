@@ -427,7 +427,7 @@ class PyFAIToCrystFEL:
         nasicsf = nasics_in_cols
         txt = header_crystfel()
         for n in range(nsegs):
-            txt = '\n'
+            txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
                 vfs = np.array((\
                     x[n,r0,c0+acols-1] - x[n,r0,c0],\
