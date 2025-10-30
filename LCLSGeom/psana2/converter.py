@@ -263,8 +263,8 @@ class PyFAIToPsana:
         dist = self.params[0]
         poni1 = self.params[1]
         poni2 = self.params[2]
-        p1 = (p1 - poni1 - (self.detector.pixel_size / 2)).ravel()
-        p2 = (p2 - poni2 - (self.detector.pixel_size / 2)).ravel()
+        p1 = (p1 - poni1).ravel()
+        p2 = (p2 - poni2).ravel()
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
@@ -392,8 +392,8 @@ class PyFAIToCrystFEL:
         dist = self.params[0]
         poni1 = self.params[1]
         poni2 = self.params[2]
-        p1 = (p1 - poni1 - (self.detector.pixel_size / 2)).ravel()
-        p2 = (p2 - poni2 - (self.detector.pixel_size / 2)).ravel()
+        p1 = (p1 - poni1).ravel()
+        p2 = (p2 - poni2).ravel()
         if p3 is None:
             p3 = np.zeros_like(p1) + dist
         else:
