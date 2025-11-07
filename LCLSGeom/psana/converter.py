@@ -228,7 +228,7 @@ class PyFAIToPsana:
             Z coordinate in meters
         """
         x, y, z = x*1e6, y*1e6, z*1e6
-        return -x, y, -z
+        return y, x, -z
 
     def correct_geom(self):
         """
