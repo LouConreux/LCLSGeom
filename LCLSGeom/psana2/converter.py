@@ -139,7 +139,7 @@ class PsanaToPyFAI:
             z = np.zeros_like(z)
         else:
             z -= np.mean(z)
-        return y, x, -z
+        return x, y, z
 
     def get_pixel_index_map(self):
         """
@@ -229,7 +229,7 @@ class PyFAIToPsana:
         self.correct_geom()
         self.convert_pyfai_to_data(out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -244,15 +244,8 @@ class PyFAIToPsana:
         params : list
             Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
-        return y, x, -z
+        return x, y, z
 
     def correct_geom(self):
         """
@@ -272,7 +265,7 @@ class PyFAIToPsana:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(self.params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, self.params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
@@ -357,7 +350,7 @@ class PyFAIToCrystFEL:
         self.correct_geom()
         self.convert_pyfai_to_geom(out_file=out_file)
     
-    def pyfai_to_psana(self, x, y, z, params):
+    def pyfai_to_psana(self, x, y, z):
         """
         Convert back to psana coordinates
 
@@ -369,18 +362,9 @@ class PyFAIToCrystFEL:
             Y coordinate in meters
         z : np.ndarray
             Z coordinate in meters
-        params : list
-            Detector parameters found by PyFAI calibration
         """
-        z -= np.mean(z)
-        if params is None:
-            params = self.params
-        cos_rot1 = np.cos(params[3])
-        cos_rot2 = np.cos(params[4])
-        distance_sample_detector = params[0]*(1/(cos_rot1*cos_rot2))
-        z += distance_sample_detector
         x, y, z = x*1e6, y*1e6, z*1e6
-        return y, x, -z
+        return x, y, z
 
     def correct_geom(self):
         """
@@ -401,7 +385,7 @@ class PyFAIToCrystFEL:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z, params)
+        x, y, z = self.pyfai_to_psana(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z

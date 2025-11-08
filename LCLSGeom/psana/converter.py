@@ -127,7 +127,7 @@ class PsanaToPyFAI:
             z = np.zeros_like(z)
         else:
             z -= np.mean(z)
-        return y, x, -z
+        return x, y, z
 
     def get_pixel_index_map(self):
         temp_index = [np.asarray(t) for t in self.geo.get_pixel_coord_indexes()]
@@ -228,7 +228,7 @@ class PyFAIToPsana:
             Z coordinate in meters
         """
         x, y, z = x*1e6, y*1e6, z*1e6
-        return y, x, -z
+        return x, y, z
 
     def correct_geom(self):
         """
@@ -347,7 +347,7 @@ class PyFAIToCrystFEL:
             Z coordinate in meters
         """
         x, y, z = x*1e6, y*1e6, z*1e6
-        return y, x, -z
+        return x, y, z
 
     def correct_geom(self):
         """

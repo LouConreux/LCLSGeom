@@ -62,7 +62,7 @@ def angle_and_tilt(a):
     desangles = np.array((-180,-90, 0, 90, 180))
     difangles = a-desangles
     absdifang = np.abs(difangles)
-    imin = np.where(absdifang == np.amin(absdifang))[0]
+    imin = np.argmin(absdifang)
     angle, tilt = desangles[imin], difangles[imin]
     return (angle if angle>=0 else angle+360), tilt
 
