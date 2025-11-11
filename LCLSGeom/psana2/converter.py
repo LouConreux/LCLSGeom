@@ -139,7 +139,7 @@ class PsanaToPyFAI:
             z = np.zeros_like(z)
         else:
             z -= np.mean(z)
-        return x, y, z
+        return y, x, -z
 
     def get_pixel_index_map(self):
         """
@@ -245,7 +245,7 @@ class PyFAIToPsana:
             Detector parameters found by PyFAI calibration
         """
         x, y, z = x*1e6, y*1e6, z*1e6
-        return x, y, z
+        return y, x, -z
 
     def correct_geom(self):
         """
@@ -364,7 +364,7 @@ class PyFAIToCrystFEL:
             Z coordinate in meters
         """
         x, y, z = x*1e6, y*1e6, z*1e6
-        return x, y, z
+        return y, x, -z
 
     def correct_geom(self):
         """
