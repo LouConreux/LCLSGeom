@@ -26,7 +26,7 @@ class PsanaToCrystFEL:
 
     def convert_data_to_geom(self, in_file, out_file):
         """
-        Write a CrystFEL .geom file from a psana .data file using PSCalib.UtilsConvert functions
+        Write a CrystFEL .geom file from a psana .data file
         """
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
@@ -116,7 +116,7 @@ class PsanaToPyFAI:
         self.detector.seg_geo = self.geo.get_seg_geo()
         self.detector.segname = self.geo.get_seg_geo().oname
 
-    def psana_to_pyfai(self, x, y, z):
+    def image_to_pyfai(self, x, y, z):
         """
         Convert psana coordinates to pyfai coordinates
         """
@@ -136,6 +136,25 @@ class PsanaToPyFAI:
         pixel_index_map[..., 1] = temp_index[1][0]
         self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
+    def get_image_frame_coordinates(self, geometry):
+        """
+        Return the image frame coordinates for the given geometry
+
+        Parameters
+        ----------
+        geometry : GeometryObject
+            The root geometry object defined relative to the IP.
+        """
+        # Set reference frame to be the image frame (i.e. no offsets or rotations)
+        geometry.x0 = 0
+        geometry.y0 = 0
+        geometry.z0 = 0
+        geometry.rot_x = 0
+        geometry.rot_y = 0
+        geometry.rot_z = 0
+        x, y, z = geometry.get_pixel_coords(do_tilt=True)
+        return x, y, z
+
     def get_pixel_corners(self):
         geo = self.geo
         top = geo.get_top_geo()
@@ -144,8 +163,8 @@ class PsanaToPyFAI:
         self.detector.geo = geo
         self.detector.seg = seg
         self.detector.segname = seg.oname
-        x, y, z = geo.get_pixel_coords(oname=child.oname, oindex=0, do_tilt=True, cframe=0)
-        x, y, z = self.psana_to_pyfai(x, y, z)
+        x, y, z = self.get_image_frame_coordinates(geometry=child)
+        x, y, z = self.image_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
         nasics = self.detector.n_asics
         asics_shape = self.detector.asics_shape
@@ -214,9 +233,9 @@ class PyFAIToPsana:
         self.correct_geom()
         self.convert_pyfai_to_data(out_file=out_file)
 
-    def pyfai_to_psana(self, x, y, z):
+    def pyfai_to_image(self, x, y, z):
         """
-        Convert back to psana coordinates
+        Convert back to image coordinates
 
         Parameters
         ----------
@@ -248,7 +267,7 @@ class PyFAIToPsana:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(self.params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z)
+        x, y, z = self.pyfai_to_image(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
@@ -333,9 +352,9 @@ class PyFAIToCrystFEL:
         self.correct_geom()
         self.convert_pyfai_to_geom(out_file=out_file)
 
-    def pyfai_to_psana(self, x, y, z):
+    def pyfai_to_image(self, x, y, z):
         """
-        Convert back to psana coordinates
+        Convert back to image coordinates
 
         Parameters
         ----------
@@ -368,7 +387,7 @@ class PyFAIToCrystFEL:
         coord_det = np.stack((p1, p2, p3), axis=0)
         coord_sample = np.dot(rotation_matrix(params), coord_det)
         x, y, z = coord_sample
-        x, y, z = self.pyfai_to_psana(x, y, z)
+        x, y, z = self.pyfai_to_image(x, y, z)
         self.X = x
         self.Y = y
         self.Z = z
