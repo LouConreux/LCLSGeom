@@ -5,13 +5,13 @@ import pyFAI
 from LCLSGeom.common.detector import get_detector
 from LCLSGeom.common.calib import detname_to_pars
 from LCLSGeom.common.header import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
-from LCLSGeom.common.geometry import rotation_matrix, angle_and_tilt, tilt_xy, rotate_z
+from LCLSGeom.common.geometry import rotation_matrix, angle_and_tilt, tilt_xy
 from PSCalib.GeometryAccess import GeometryAccess
 pyFAI.use_opencl = False
 
 class PsanaToCrystFEL:
     """
-    Class to convert psana .data geometry files to CrystFEL .geom geometry files in the desired reference frame
+    Class to convert psana .data geometry files to CrystFEL .geom geometry files
 
     Parameters
     ----------
@@ -27,6 +27,13 @@ class PsanaToCrystFEL:
     def convert_data_to_geom(self, in_file, out_file):
         """
         Write a CrystFEL .geom file from a psana .data file
+
+        Parameters
+        ----------
+        in_file : str
+            Path to the psana .data file
+        out_file : str
+            Path to the output CrystFEL .geom file
         """
         geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         top = geo.get_top_geo()
@@ -118,7 +125,7 @@ class PsanaToPyFAI:
 
     def image_to_pyfai(self, x, y, z):
         """
-        Convert psana coordinates to pyfai coordinates
+        Convert image coordinates to pyfai coordinates
         """
         x = x * 1e-6
         y = y * 1e-6
@@ -130,6 +137,9 @@ class PsanaToPyFAI:
         return y, x, -z
 
     def get_pixel_index_map(self):
+        """
+        Create a pixel index map for assembling the detector
+        """
         temp_index = [np.asarray(t) for t in self.geo.get_pixel_coord_indexes()]
         pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
         pixel_index_map[..., 0] = temp_index[0][0]
@@ -156,6 +166,9 @@ class PsanaToPyFAI:
         return x, y, z
 
     def get_pixel_corners(self):
+        """
+        Compute the pixel corner coordinates to instantiate a 3D PyFAI detector
+        """
         geo = self.geo
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -214,14 +227,14 @@ class PsanaToPyFAI:
 
 class PyFAIToPsana:
     """
-    Class to convert PyFAI Detector instance to psana .data geometry files by using intermediate CrystFEL .geom files 
+    Class to write CrystFEL .geom geometry files from PyFAI .poni files
 
     Parameters
     ----------
     in_file : str
         Path to the PyFAI .poni file containing detector geometry parameters
     detector : pyFAI.Detector
-        PyFAI Detector instance to be calibrated by the .poni file
+        PyFAI Detector model to be calibrated by the .poni file
     out_file : str
         Path to the output .psana file
     """
@@ -251,8 +264,7 @@ class PyFAIToPsana:
 
     def correct_geom(self):
         """
-        Correct the geometry based on the given parameters found by PyFAI calibration
-        Finally scale to micrometers (needed for writing CrystFEL .geom files)
+        Correct the geometry based on the PONI parameters
         """
         p1, p2, p3 = self.detector.calc_cartesian_positions()
         dist = self.params[0]
@@ -318,10 +330,8 @@ class PyFAIToPsana:
             angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
             angle_z, tilt_z = angle_and_tilt(angle_deg_z)
             tilt_x, tilt_y = tilt_xy(nfs, nss)
-            angle_child_x = child.get_list_of_children()[p].rot_x
-            angle_child_y = child.get_list_of_children()[p].rot_y
-            angle_child_z = child.get_list_of_children()[p].rot_z
-            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
+            angle_x = child.get_list_of_children()[p].rot_x
+            angle_y = child.get_list_of_children()[p].rot_y
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
@@ -333,14 +343,14 @@ class PyFAIToPsana:
 
 class PyFAIToCrystFEL:
     """
-    Class to write CrystFEL .geom geometry files from PyFAI SingleGeometry instance
+    Class to write CrystFEL .geom geometry files from PyFAI .poni files
 
     Parameters
     ----------
     in_file : str
         Path to the PyFAI .poni file containing detector geometry parameters
     detector : pyFAI.Detector
-        PyFAI Detector instance to be calibrated by the .poni file
+        PyFAI Detector model to be calibrated by the .poni file
     out_file : str
         Path to the output .geom file
     """
@@ -370,8 +380,7 @@ class PyFAIToCrystFEL:
 
     def correct_geom(self):
         """
-        Correct the geometry based on the given parameters found by PyFAI calibration
-        Finally scale to micrometers (needed for writing CrystFEL .geom files)
+        Correct the geometry based on the PONI parameters
         """
         params = self.params
         p1, p2, p3 = self.detector.calc_cartesian_positions()
@@ -394,12 +403,10 @@ class PyFAIToCrystFEL:
     
     def convert_pyfai_to_geom(self, out_file):
         """
-        From corrected X, Y, Z coordinates, write a CrystFEL .geom file
+        Main function to convert PyFAI coordinates to CrystFEL .geom geometry file
 
         Parameters
         ----------
-        psana_file : str
-            Path to the psana .data file for retrieving segmentation information
         output_file : str
             Path to the output .geom file
         """
@@ -449,7 +456,7 @@ class PyFAIToCrystFEL:
 
 class CrystFELToPsana:
     """
-    Class to convert CrystFEL .geom geometry files to psana .data geometry files thanks to detector information
+    Class to convert CrystFEL .geom geometry files to psana .data geometry files
 
     Parameters
     ----------
@@ -552,10 +559,8 @@ class CrystFELToPsana:
             angle_deg_z = degrees(atan2(nfs[1], nfs[0]))
             angle_z, tilt_z = angle_and_tilt(angle_deg_z)
             tilt_x, tilt_y = tilt_xy(nfs, nss)
-            angle_child_x = child.get_list_of_children()[p].rot_x
-            angle_child_y = child.get_list_of_children()[p].rot_y
-            angle_child_z = child.get_list_of_children()[p].rot_z
-            angle_x, angle_y, tilt_x, tilt_y = rotate_z(angle_child_z, angle_child_x, angle_child_y, tilt_x, tilt_y)
+            angle_x = child.get_list_of_children()[p].rot_x
+            angle_y = child.get_list_of_children()[p].rot_y
             recs += '\n%12s  0 %12s %2d' %(childname, segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
@@ -578,7 +583,7 @@ class CrystFELToPsana:
 
 class CrystFELToPyFAI:
     """
-    Class to convert CrystFEL .geom geometry files to PyFAI Detector instance by using intermediate psana .data files
+    Class to convert CrystFEL .geom geometry files to PyFAI Detector model by using intermediate psana .data files
 
     Parameters
     ----------
