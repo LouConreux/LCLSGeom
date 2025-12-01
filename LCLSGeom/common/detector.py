@@ -9,6 +9,7 @@ class ePix10k2M(Detector):
         self,
     ):
         self.pixel_size = 0.0001
+        self.pixel_size_um = 100.0
         self.detname = "epix10k2M"
         self.raw_shape = (16, 352, 384)
         self.n_modules = self.raw_shape[0]
@@ -27,6 +28,7 @@ class ePix10kaQuad(Detector):
         self,
     ):
         self.pixel_size = 0.0001
+        self.pixel_size_um = 100.0
         self.raw_shape = (4, 352, 384)
         self.detname = "Epix10kaQuad"
         self.n_modules = self.raw_shape[0]
@@ -45,6 +47,7 @@ class Jungfrau05M(Detector):
         self,
     ):
         self.pixel_size = 0.000075
+        self.pixel_size_um = 75.0
         self.raw_shape = (512, 1024)
         self.detname = "jungfrau05M"
         self.n_modules = 1
@@ -63,6 +66,7 @@ class Jungfrau1M(Detector):
         self,
     ):
         self.pixel_size = 0.000075
+        self.pixel_size_um = 75.0
         self.raw_shape = (2, 512, 1024)
         self.detname = "jungfrau1M"
         self.n_modules = self.raw_shape[0]
@@ -81,6 +85,7 @@ class Jungfrau4M(Detector):
         self,
     ):
         self.pixel_size = 0.000075
+        self.pixel_size_um = 75.0
         self.raw_shape = (8, 512, 1024)
         self.detname = "jungfrau4M"
         self.n_modules = self.raw_shape[0]
@@ -99,6 +104,7 @@ class Jungfrau16M(Detector):
         self,
     ):
         self.pixel_size = 0.000075
+        self.pixel_size_um = 75.0
         self.raw_shape = (32, 512, 1024)
         self.detname = "jungfrau16M"
         self.n_modules = self.raw_shape[0]
