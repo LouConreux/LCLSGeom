@@ -114,23 +114,27 @@ class PsanaToPyFAI:
     def setup_detector(self):
         """
         Pass the detector segmentation and geometry info to the PyFAI detector instance
+
+        Parameters
+        ----------
+        geo : GeometryAccess
+            The GeometryAccess instance for the psana .data file
         """
-        self.detector.geo = self.geo
-        self.detector.seg = self.geo.get_seg_geo().algo
+        self.detector.seg_geo = self.geo.get_seg_geo()
         self.detector.segname = self.geo.get_seg_geo().oname
+        top = self.geo.get_top_geo()
+        child = top.get_list_of_children()[0]
+        child.x0 = 0
+        child.y0 = 0
+        child.z0 = 0
+        child.rot_x = 0
+        child.rot_y = 0
+        child.rot_z = 0
+        self.image_geo = child
 
     def image_to_pyfai(self, x, y, z):
         """
         Convert image coordinates to pyfai coordinates
-
-        Parameters
-        ----------
-        x : np.ndarray
-            X coordinate in micrometers
-        y : np.ndarray
-            Y coordinate in micrometers
-        z : np.ndarray
-            Z coordinate in micrometers
         """
         x = x * 1e-6
         y = y * 1e-6
@@ -146,38 +150,24 @@ class PsanaToPyFAI:
         Create a pixel index map for assembling the detector
         """
         temp_index = [np.asarray(t) for t in self.geo.get_pixel_coord_indexes()]
-        pixel_index_map = np.zeros((np.array(temp_index).shape[1:]) + (2,))
-        pixel_index_map[..., 0] = temp_index[0]
-        pixel_index_map[..., 1] = temp_index[1]
+        pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
+        pixel_index_map[..., 0] = temp_index[0][0]
+        pixel_index_map[..., 1] = temp_index[1][0]
         self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
-    def get_image_frame_coordinates(self, geometry):
+    def get_image_frame_coordinates(self):
         """
         Return the image frame coordinates for the given geometry
-
-        Parameters
-        ----------
-        geometry : GeometryObject
-            The root geometry object defined relative to the IP.
         """
         # Set reference frame to be the image frame (i.e. no offsets or rotations)
-        geometry.x0 = 0
-        geometry.y0 = 0
-        geometry.z0 = 0
-        geometry.rot_x = 0
-        geometry.rot_y = 0
-        geometry.rot_z = 0
-        x, y, z = geometry.get_pixel_coords(do_tilt=True)
+        x, y, z = self.image_geo.get_pixel_coords(do_tilt=True)
         return x, y, z
 
     def get_pixel_corners(self):
         """
         Compute the pixel corner coordinates to instantiate a 3D PyFAI detector
         """
-        geo = self.geo
-        top = geo.get_top_geo()
-        child = top.get_list_of_children()[0]
-        x, y, z = self.get_image_frame_coordinates(geometry=child)
+        x, y, z = self.get_image_frame_coordinates()
         x, y, z = self.image_to_pyfai(x, y, z)
         npanels = self.detector.n_modules
         nasics = self.detector.n_asics
