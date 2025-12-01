@@ -150,9 +150,9 @@ class PsanaToPyFAI:
         Create a pixel index map for assembling the detector
         """
         temp_index = [np.asarray(t) for t in self.geo.get_pixel_coord_indexes()]
-        pixel_index_map = np.zeros((np.array(temp_index).shape[2:]) + (2,))
-        pixel_index_map[..., 0] = temp_index[0][0]
-        pixel_index_map[..., 1] = temp_index[1][0]
+        pixel_index_map = np.zeros((np.array(temp_index).shape[1:]) + (2,))
+        pixel_index_map[..., 0] = temp_index[0]
+        pixel_index_map[..., 1] = temp_index[1]
         self.detector.pixel_index_map = pixel_index_map.astype(np.int64)
 
     def get_image_frame_coordinates(self):
