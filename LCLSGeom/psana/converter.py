@@ -95,12 +95,12 @@ class PsanaToPyFAI:
         Path to the psana .data file
     """
 
-    def __init__(self, in_file):
+    def __init__(self, in_file, rotate=True):
         self.geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
         shape = self.shape3d()
         self.detector = get_detector(shape=shape)
         self.setup_detector()
-        geometry = self.set_image_frame()
+        geometry = self.set_image_frame(rotate=rotate)
         self.get_pixel_index_map(geometry=geometry)
         corner_array = self.get_pixel_corners(geometry=geometry)
         self.detector.set_pixel_corners(ary=corner_array)
@@ -124,7 +124,7 @@ class PsanaToPyFAI:
         self.detector.seg_geo = self.geo.get_seg_geo()
         self.detector.segname = self.geo.get_seg_geo().oname
 
-    def set_image_frame(self):
+    def set_image_frame(self, rotate=True):
         """
         Modify the geometry to be in the image frame for PyFAI
 
@@ -132,6 +132,8 @@ class PsanaToPyFAI:
         ----------
         geometry : GeometryObject
             The root geometry object defined relative to the IP.
+        rotate : bool
+            Whether to undo the 90 degree rotation applied in psana.
         """
         # Set reference frame to be the image frame (i.e. no offsets and undo 90° rotation)
         # X-axis: horizontal from left to right
@@ -144,7 +146,8 @@ class PsanaToPyFAI:
         geometry.z0 = 0
         geometry.rot_x = 0
         geometry.rot_y = 0
-        geometry.rot_z -= 90
+        if rotate:
+            geometry.rot_z -= 90
         return geometry
 
     def image_to_pyfai(self, x, y, z):

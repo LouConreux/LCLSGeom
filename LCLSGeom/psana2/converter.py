@@ -97,7 +97,7 @@ class PsanaToPyFAI:
         Geometry .data file or psana Detector object
     """
 
-    def __init__(self, input):
+    def __init__(self, input, rotate=True):
         if isinstance(input, str):
             self.geo = GeometryAccess(path=input, pbits=0, use_wide_pix_center=False)
         elif hasattr(input, 'raw'):
@@ -107,7 +107,7 @@ class PsanaToPyFAI:
             raise ValueError('input must be a path to a .data file or a psana.Detector object')
         self.detector = get_detector(shape=self.geo.shape3d())
         self.setup_detector()
-        geometry = self.set_image_frame()
+        geometry = self.set_image_frame(rotate=rotate)
         self.get_pixel_index_map(geometry=geometry)
         corner_array = self.get_pixel_corners(geometry=geometry)
         self.detector.set_pixel_corners(ary=corner_array)
@@ -120,7 +120,7 @@ class PsanaToPyFAI:
         self.detector.seg_geo = self.geo.get_seg_geo()
         self.detector.segname = self.geo.get_seg_geo().oname
 
-    def set_image_frame(self):
+    def set_image_frame(self, rotate=True):
         """
         Modify the geometry to be in the image frame for PyFAI
 
@@ -140,7 +140,8 @@ class PsanaToPyFAI:
         geometry.z0 = 0
         geometry.rot_x = 0
         geometry.rot_y = 0
-        geometry.rot_z -= 90
+        if rotate:
+            geometry.rot_z -= 90
         return geometry
 
     def image_to_pyfai(self, x, y, z):
@@ -413,7 +414,7 @@ class PyFAIToCrystFEL:
         x = self.X.reshape(self.detector.raw_shape)
         y = self.Y.reshape(self.detector.raw_shape)
         z = self.Z.reshape(self.detector.raw_shape)
-        seg = self.detector.seg
+        seg = self.detector.seg_geo.algo
         nsegs = int(x.size/seg.size())
         arows, acols = seg.asic_rows_cols()
         srows, _ = seg.shape()

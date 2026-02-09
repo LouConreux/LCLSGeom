@@ -145,7 +145,7 @@ def header_psana(detname):
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
         +'\n'
-    elif detname.lower() == 'jungfrau':
+    elif detname.lower() == 'jungfrau16m':
         txt=\
         '# TITLE      Geometry parameters of Jungfrau16M'\
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
