@@ -1,5 +1,7 @@
-import os
-import re
+"""
+This module provides functions to determine the appropriate calibration group and source string for a given LCLS-I detector and hutch.
+It also includes mappings between detector names, calibration groups, and hutches/stations.
+"""
 
 detname_to_pars = {
     'epix10k2m': 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0',
@@ -56,7 +58,7 @@ calib_groups = (
     "Camera::CalibV1",
 )
 
-psana_det_names = (
+psana_detnames = (
     "UNDEFINED",
     "Cspad",
     "Cspad2x2",
@@ -102,9 +104,9 @@ psana_det_names = (
     "Alvium",
 )
 
-psana_det_names_lower = tuple(name.lower() for name in psana_det_names)
+psana_detnames_lower = tuple(name.lower() for name in psana_detnames)
 
-calib_det_names = (
+calib_detnames = (
     "UNDEFINED",
     "Cspad",
     "Cspad2x2",
@@ -169,80 +171,33 @@ stations = (
 )
 
 
-psana_to_calib_det_name = dict(zip(psana_det_names_lower, calib_det_names))
+psana_to_calib_detname = dict(zip(psana_detnames_lower, calib_detnames))
 
-det_to_group = dict(zip(calib_det_names, calib_groups))
+det_to_group = dict(zip(calib_detnames, calib_groups))
 
 hutch_to_station = dict(zip(hutches, stations))
 
 
-def group_from_det_type(det_type: str) -> str:
+def group_from_detname(detname: str) -> str:
     """Retrieve the group string from the detector type."""
-    det_type_lower = det_type.lower()
-    det_name = psana_to_calib_det_name.get(det_type_lower, "UNDEFINED")
-    if det_name == "UNDEFINED":
-        raise ValueError(f"Unknown detector type: {det_type}")
-    group = det_to_group.get(det_name)
+    detname_lower = detname.lower()
+    detname = psana_to_calib_detname.get(detname_lower, "UNDEFINED")
+    if detname == "UNDEFINED":
+        raise ValueError(f"Unknown detector type: {detname}")
+    group = det_to_group.get(detname)
     return group
 
 
-def source_from_det_info(det_type: str, hutch: str) -> str:
-    """Retrieve the source string from the detector type and hutch."""
+def source_from_detname(detname: str, hutch: str) -> str:
+    """Retrieve the source string from the detector name and hutch."""
     hutch_upper = hutch.upper()
     station = hutch_to_station.get(hutch_upper, "UNDEFINED")
     if station == "UNDEFINED":
         raise ValueError(f"Unknown hutch: {hutch}")
-    det_type_lower = det_type.lower()
-    det_name = psana_to_calib_det_name.get(det_type_lower, "UNDEFINED")
-    if det_name == "UNDEFINED":
-        raise ValueError(f"Unknown detector type: {det_type}")
-    if "Epix10kaQuad" in det_name:
-        return f"{station}:{det_name}"
-    return f"{station}:{det_name}.0"
-
-def fetch_template(exp, det_type, src, pixel_size, shape):
-    """
-    Pick the appropriate psana format template based on the detector type
-    Parameters pixel size, and shape are required for the Rayonix detector
-    Populate the experiment calibration directory with the template
-
-    Parameters
-    ----------
-    exp : str
-        Experiment name
-    det_type : str
-        Detector type
-    src : str
-        Source name of end station
-    pixel_size : float
-        Pixel size in µm
-    shape : tuple
-        Detector shape
-    """
-    current_dir = os.path.dirname(__file__)
-    template_file = os.path.join(current_dir, "templates", det_type, "0-end.data")
-    if not os.path.exists(template_file):
-        raise FileNotFoundError(f"Template not found for detector {det_type}.")
-    
-    with open(template_file, "r") as file:
-        content = file.readlines()
-
-    if det_type.lower() == "rayonix":
-        for i, line in enumerate(content):
-            if "MTRX:V2" in line:
-                updated_line = re.sub(
-                    r"MTRX:V2:\d+:\d+:\d+:\d+",
-                    f"MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size}:{pixel_size}",
-                    line
-                )
-                content[i] = updated_line
-                break
-
-    cdir = f"/sdf/data/lcls/ds/{exp[:3]}/{exp}/calib"
-    group = group_from_det_type(det_type)
-    type = "geometry"
-    in_file = os.path.join(cdir, group, src, type, "0-end.data")
-    os.makedirs(os.path.dirname(in_file), exist_ok=True)
-    with open(in_file, "w") as file:
-        file.writelines(content)
-    return in_file
+    detname_lower = detname.lower()
+    detname = psana_to_calib_detname.get(detname_lower, "UNDEFINED")
+    if detname == "UNDEFINED":
+        raise ValueError(f"Unknown detector type: {detname}")
+    if "Epix10kaQuad" in detname:
+        return f"{station}:{detname}"
+    return f"{station}:{detname}.0"

@@ -11,12 +11,12 @@ class ePix10k2M(Detector):
         self.pixel_size = 0.0001
         self.pixel_size_um = 100.0
         self.detname = "epix10k2M"
-        self.raw_shape = (16, 352, 384)
-        self.n_modules = self.raw_shape[0]
+        self.calib_shape = (16, 352, 384)
+        self.n_modules = self.calib_shape[0]
         self.n_asics = 4
         self.asics_shape = (2, 2)
-        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[1] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[2] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class ePix10kaQuad(Detector):
@@ -29,13 +29,13 @@ class ePix10kaQuad(Detector):
     ):
         self.pixel_size = 0.0001
         self.pixel_size_um = 100.0
-        self.raw_shape = (4, 352, 384)
+        self.calib_shape = (4, 352, 384)
         self.detname = "Epix10kaQuad"
-        self.n_modules = self.raw_shape[0]
+        self.n_modules = self.calib_shape[0]
         self.n_asics = 4
         self.asics_shape = (2, 2)
-        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[1] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[2] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau05M(Detector):
@@ -48,13 +48,13 @@ class Jungfrau05M(Detector):
     ):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
-        self.raw_shape = (512, 1024)
+        self.calib_shape = (512, 1024)
         self.detname = "jungfrau05M"
         self.n_modules = 1
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = self.raw_shape[0] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[1] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[0] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[1] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau1M(Detector):
@@ -67,13 +67,13 @@ class Jungfrau1M(Detector):
     ):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
-        self.raw_shape = (2, 512, 1024)
+        self.calib_shape = (2, 512, 1024)
         self.detname = "jungfrau1M"
-        self.n_modules = self.raw_shape[0]
+        self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[1] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[2] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau4M(Detector):
@@ -86,13 +86,13 @@ class Jungfrau4M(Detector):
     ):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
-        self.raw_shape = (8, 512, 1024)
+        self.calib_shape = (8, 512, 1024)
         self.detname = "jungfrau4M"
-        self.n_modules = self.raw_shape[0]
+        self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[1] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[2] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 class Jungfrau16M(Detector):
@@ -105,13 +105,13 @@ class Jungfrau16M(Detector):
     ):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
-        self.raw_shape = (32, 512, 1024)
+        self.calib_shape = (32, 512, 1024)
         self.detname = "jungfrau16M"
-        self.n_modules = self.raw_shape[0]
+        self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
-        self.ss_size = self.raw_shape[1] // self.asics_shape[0]
-        self.fs_size = self.raw_shape[2] // self.asics_shape[1]
+        self.ss_size = self.calib_shape[1] // self.asics_shape[0]
+        self.fs_size = self.calib_shape[2] // self.asics_shape[1]
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 def get_detector(shape):

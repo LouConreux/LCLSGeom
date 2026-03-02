@@ -85,7 +85,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   Rayonix'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the Rayonix detector'\
@@ -96,7 +96,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   Epix10ka2M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 16-segment ePix10k2M detector'\
@@ -107,7 +107,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   %s' % detname\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the ePix10kaQuad detector'\
@@ -118,7 +118,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+            +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   DetLab.0:Jungfrau.0 or jungfrau05M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 1-segment Jungfrau1M detector'\
@@ -129,7 +129,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   DetLab.0:Jungfrau.1 or jungfrau1M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 2-segment Jungfrau1M detector'\
@@ -140,7 +140,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   DetLab.0:Jungfrau.2 or jungfrau4M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 8-segment Jungfrau4M detector'\
@@ -151,7 +151,7 @@ def header_psana(detname):
         +'\n# DATE_TIME  %s' % get_time_stamp(fmt='%Y-%m-%dT%H:%M:%S %Z')\
         +'\n# METROLOGY  no metrology available'\
         +'\n# AUTHOR     %s' % get_login()\
-        +'\n# EXPERIMENT N\A'\
+        +'\n# EXPERIMENT N/A'\
         +'\n# DETECTOR   DetLab.0:Jungfrau.3 or jungfrau16M'\
         +'\n# CALIB_TYPE geometry'\
         +'\n# COMMENT:01 Automatically created from BayFAI for the 32-segment Jungfrau16M detector'\

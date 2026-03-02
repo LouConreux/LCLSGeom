@@ -136,3 +136,29 @@ def rotate_z(angle_z, angle_x, angle_y, tilt_x, tilt_y):
     result_x = 0.0 if result_x == 0.0 else result_x
     result_y = 0.0 if result_y == 0.0 else result_y
     return result_x, result_y, tilt_x, tilt_y
+
+def correct_geometry(detector, params):
+    """
+    Correct the geometry based on the PONI parameters
+
+    Parameters
+    ----------
+    detector : pyFAI.detectors.Detector
+        The pyFAI Detector object to be corrected
+    params : list
+        Detector parameters found by PyFAI calibration
+    """
+    p1, p2, p3 = detector.calc_cartesian_positions()
+    dist = params[0]
+    poni1 = params[1]
+    poni2 = params[2]
+    p1 = (p1 - poni1).ravel()
+    p2 = (p2 - poni2).ravel()
+    if p3 is None:
+        p3 = np.zeros_like(p1) + dist
+    else:
+        p3 = (p3+dist).ravel()
+    coord_det = np.stack((p1, p2, p3), axis=0)
+    coord_sample = np.dot(rotation_matrix(params), coord_det)
+    x, y, z = coord_sample
+    return x, y, z
