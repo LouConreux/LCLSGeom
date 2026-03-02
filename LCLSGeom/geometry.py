@@ -1,3 +1,7 @@
+"""
+Geometry correction functions for LCLS detectors based on pyFAI calibration parameters.
+"""
+
 import numpy as np
 from math import degrees, atan2
 

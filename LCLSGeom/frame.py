@@ -1,3 +1,7 @@
+"""
+Frame transformations between image/psana-lab coordinates and pyFAI coordinates.
+"""
+
 import numpy as np
 
 def image_to_pyfai(x, y, z, image_frame=True):

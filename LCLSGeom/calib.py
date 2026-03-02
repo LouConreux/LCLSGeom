@@ -3,6 +3,8 @@ This module provides functions to determine the appropriate calibration group an
 It also includes mappings between detector names, calibration groups, and hutches/stations.
 """
 
+import os
+
 detname_to_pars = {
     'epix10k2m': 'p0a0,p1a0,p2a0,p3a0,p4a0,p5a0,p6a0,p7a0,p8a0,p9a0,p10a0,p11a0,p12a0,p13a0,p14a0,p15a0',
     'epix10kaquad': 'p0a0,p1a0,p2a0,p3a0',
@@ -106,6 +108,52 @@ psana_detnames = (
 
 psana_detnames_lower = tuple(name.lower() for name in psana_detnames)
 
+full_detnames = (
+    "UNDEFINED",
+    "cspad",
+    "cspad2x2",
+    "princeton",
+    "pnCCD",
+    "tm6740",
+    "opal1000",
+    "opal2000",
+    "opal4000",
+    "opal8000",
+    "orcaFl40",
+    "epix",
+    "epix10k",
+    "epix100a",
+    "fccd960",
+    "andor",
+    "acqiris",
+    "imp",
+    "quartz4A150",
+    "rayonix",
+    "evr",
+    "fccd",
+    "timepix",
+    "fli",
+    "pimax",
+    "andor3d",
+    "jungfrau16M",
+    "jungfrau1M",
+    "jungfrau4M",
+    "zyla",
+    "controlsCamera",
+    "epix10ka",
+    "uxi",
+    "pixis",
+    "epix10k2M",
+    "epix10kaQuad0",
+    "epix10kaQuad1",
+    "epix10kaQuad2",
+    "epix10kaQuad3",
+    "streak",
+    "archon",
+    "iStar",
+    "alvium",
+)
+
 calib_detnames = (
     "UNDEFINED",
     "Cspad",
@@ -173,6 +221,8 @@ stations = (
 
 psana_to_calib_detname = dict(zip(psana_detnames_lower, calib_detnames))
 
+psana_to_full_detname = dict(zip(psana_detnames_lower, full_detnames))
+
 det_to_group = dict(zip(calib_detnames, calib_groups))
 
 hutch_to_station = dict(zip(hutches, stations))
@@ -201,3 +251,55 @@ def source_from_detname(detname: str, hutch: str) -> str:
     if "Epix10kaQuad" in detname:
         return f"{station}:{detname}"
     return f"{station}:{detname}.0"
+
+
+def select_calib_file(calib_dir: str, run: int) -> Optional[str]:
+    """Select the calibration file from the calibration directory and run number."""
+    fnames = os.listdir(calib_dir)
+    files = [os.path.join(calib_dir, fname) for fname in fnames]
+
+    run_max = 9999
+    run_files = []
+    for file in files:
+        f = os.path.basename(file)
+        if f == "HISTORY":
+            continue
+        if os.path.splitext(f)[1] != ".data":
+            continue
+        basename = os.path.splitext(f)[0]
+        fields = basename.split("-")
+        begin, end = fields
+
+        if begin.isdigit():
+            begin_int = int(begin)
+            if begin_int >= run_max:
+                raise ValueError(
+                    f"Begin run number {run} is too high for calibration directory {calib_dir}"
+                )
+
+        if end.isdigit():
+            end_int = int(end)
+            if end_int >= run_max:
+                raise ValueError(
+                    f"End run number {run} is too high for calibration directory {calib_dir}"
+                )
+        elif end == "end":
+            end_int = run_max
+
+        run_files.append((begin_int, end_int, file))
+    run_files.sort(key=lambda x: int(x[0]))
+
+    for run_file in run_files[::-1]:
+        if run_file[0] <= run <= run_file[1]:
+            return run_file[2]
+
+    return os.path.join(calib_dir, "0-end.data")
+
+
+def clean_detname(detname: str) -> str:
+    """Clean the detector name by removing any trailing segment and ASIC information."""
+    detname_lower = detname.lower()
+    full_detname = psana_to_full_detname.get(detname_lower, "UNDEFINED")
+    if full_detname == "UNDEFINED":
+        raise ValueError(f"Unknown detector type: {detname}")
+    return full_detname

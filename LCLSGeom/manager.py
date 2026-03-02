@@ -25,14 +25,14 @@ else:
 import os
 import re
 
-from LCLSGeom.calib import group_from_detname, source_from_detname
+from LCLSGeom.calib import group_from_detname, source_from_detname, select_calib_file, clean_detname
 
 from logging import getLogger
 
 logger: logging.Logger = getLogger(__name__)
 
 
-def get_geometry(exp: str, run: int, detname: str, temp_dir=None) -> str:
+def get_geometry(exp: str, run: int, detname: str, skip_load: bool = False) -> str:
     """
     Get the geometry file for a given experiment, run, and detector name. 
     If LCLS-II, check first the calibration database, then the default geometry file.
@@ -47,8 +47,8 @@ def get_geometry(exp: str, run: int, detname: str, temp_dir=None) -> str:
         Run number
     detname : str
         Name of the detector
-    temp_dir : str, optional
-        Temporary directory to store the geometry file (default is None, which uses the current working directory)
+    skip_load : bool, optional
+        If True, skip loading the geometry file and return the default geometry file path. Default is False.
     
     Returns
     -------
@@ -56,8 +56,12 @@ def get_geometry(exp: str, run: int, detname: str, temp_dir=None) -> str:
         Path to the geometry file
     """
     try:
-        in_file = pull(exp=exp, run=run, detname=detname, temp_dir=temp_dir)
-        logger.info(f"Geometry file for {detname} found in calibration database for experiment {exp} and run {run}.")
+        if IS_PSANA2:
+            in_file = pull(exp=exp, run=run, detname=detname, skip_load=skip_load)
+            logger.info(f"Geometry file for {detname} found in calibration database for experiment {exp} and run {run}.")
+        else:
+            in_file = check(exp=exp, run=run, detname=detname)
+            logger.info(f"Geometry file for {detname} found in experiment calibration directory for experiment {exp} and run {run}.")
         return in_file
     except FileNotFoundError as e:
         logger.warning(str(e))
@@ -80,6 +84,7 @@ def get_default_geometry(detname: str) -> str:
     in_file : str
         Path to the default geometry file
     """
+    detname = clean_detname(detname)
     if IS_PSANA2:
         psana_path = psana.__path__[0]
         data_dir = os.path.join(psana_path, "pscalib", "geometry", "data")
@@ -97,7 +102,7 @@ def get_default_geometry(detname: str) -> str:
     return in_file
 
 
-def pull(exp: str, run: int, detname: str, temp_dir=None) -> str:
+def pull(exp: str, run: int, detname: str, skip_load: bool = False) -> str:
     """
     If LCLS-II, pull the geometry file for a given experiment, run, and detector name from the calibration database.
     If LCLS-I, pull the geometry file for a given experiment, run, and detector name from the experiment calibration directory.
@@ -110,36 +115,31 @@ def pull(exp: str, run: int, detname: str, temp_dir=None) -> str:
         Run number
     detname : str
         Name of the detector
+    skip_load : bool, optional
+        If True, skip loading the geometry file and return the default geometry file path. Default is False.
     """
-    if IS_PSANA2:
-        ds = DataSource(exp=exp, run=run)
-        runs = next(ds.runs())
-        detector = runs.Detector(detname)
-        longname: str = detector.raw._uniqueid
-        shortname: str = uc.detector_name_short(longname)
-        data, _ = wu.calib_constants(
-            shortname,
-            exp=exp,
-            ctype="geometry",
-            dtype="str",
-            url=cc.URL,
-        )
-        if data is None:
-            raise ValueError(f"Geometry for {detname} not found in calibration database for experiment {exp} and run {run}.")
-
-        if temp_dir is None:
-            temp_dir = os.getcwd()
-        in_file = os.path.join(temp_dir, "temp.data")
-        with open(in_file, "w") as f:
-            f.write(data)
+    if skip_load:
+        ds = DataSource(exp=exp, run=run, skip_calib_load="all")
     else:
-        cdir = f"/sdf/data/lcls/ds/{exp[:3]}/{exp}/calib"
-        src = source_from_detname(detname, exp[:3])
-        group = group_from_detname(detname)
-        ctype = "geometry"
-        in_file = os.path.join(cdir, group, src, ctype, "0-end.data")
-        if not os.path.exists(in_file):
-            raise FileNotFoundError(f"Geometry for {detname} not found in experiment calibration directory for experiment {exp} and run {run}.")
+        ds = DataSource(exp=exp, run=run)
+    runs = next(ds.runs())
+    detector = runs.Detector(detname)
+    longname: str = detector.raw._uniqueid
+    shortname: str = uc.detector_name_short(longname)
+    data, _ = wu.calib_constants(
+        shortname,
+        exp=exp,
+        ctype="geometry",
+        dtype="str",
+        url=cc.URL,
+    )
+    if data is None:
+        raise ValueError(f"Geometry for {detname} not found in calibration database for experiment {exp} and run {run}.")
+
+    in_file = os.path.join(os.getcwd(), "temp.data")
+    with open(in_file, "w") as f:
+        f.write(data)
+
     return in_file
 
 
@@ -193,6 +193,36 @@ def push(exp: str, run: int, detname: str, out_file: str,) -> None:
         krbheaders=cc.KRBHEADERS,
         **kwa,
     )
+
+
+def check(exp: str, run: int, detname: str) -> str:
+    """
+    Check for the geometry file for a given experiment, run, and detector name in the experiment calibration directory.
+
+    Parameters
+    ----------
+    exp : str
+        Experiment name
+    run : int
+        Run number
+    detname : str
+        Name of the detector
+    
+    Returns
+    -------
+    in_file : str
+        Path to the geometry file if found, otherwise raises FileNotFoundError
+    """
+    cdir = f"/sdf/data/lcls/ds/{exp[:3]}/{exp}/calib"
+    src = source_from_detname(detname, exp[:3])
+    group = group_from_detname(detname)
+    ctype = "geometry"
+    calib_dir = os.path.join(cdir, src, group, ctype)
+    in_file = select_calib_file(calib_dir, run)
+    if not os.path.exists(in_file):
+        raise FileNotFoundError(f"Geometry for {detname} not found in experiment calibration directory for experiment {exp} and run {run}.")
+
+    return in_file
 
 
 def fetch_template(detname, pixel_size=None, shape=None):
