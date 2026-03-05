@@ -73,6 +73,7 @@ def get_geometry(exp: str, run: int, detname: str, skip_load: bool = False) -> s
 def get_default_geometry(detname: str) -> str:
     """
     Get the default geometry file for a given detector name.
+    For LCLS-II, check first the psana installation for the default geometry file, then fetch from templates if not found.
 
     Parameters
     ----------
