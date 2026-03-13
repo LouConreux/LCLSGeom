@@ -1,11 +1,12 @@
-
-# COMMENT:00 detector:Epix10ka2M experiment:N/A
-# COMMENT:01 constants generated from optical metrology
-# COMMENT:02 processor version 1 - panels only, no quads
-# COMMENT:03 command:optical_metrology_epix10ka2m -i 2020-11-13-epix10kaquad2-metrology.txt -r3 -A270 -Z-100000 -o ...
-# DATE_TIME 2020-11-14 21:04:19 PST
-# USER dubrovin
+# TITLE      Geometry parameters of Epix10kaQuad.2
+# DATE_TIME  2017-10-26 11:00:00 PDT
+# METROLOGY  no metrology available
+# AUTHOR     dubrovin
+# EXPERIMENT any
+# DETECTOR   MecTargetChamber.0:Epix10kaQuad.2 or Epix10kaQuad.2
 # CALIB_TYPE geometry
+# COMMENT:01 Manually created as an example for the 1-segment ePix10kaQuad Q2 detector
+
 # PARAM:01 PARENT     - name and version of the parent object
 # PARAM:02 PARENT_IND - index of the parent object
 # PARAM:03 OBJECT     - name and version of the object

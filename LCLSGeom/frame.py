@@ -28,16 +28,11 @@ def image_to_pyfai(x, y, z, image_frame=True):
         z -= np.mean(z)
 
     if image_frame:
-        x = y
-        y = x
-        z = -z
+        return y, x, -z
     else:
-        x = -x
-        y = y
-        z = -z
-    return x, y, z
+        return -x, y, -z
 
-def pyfai_to_image(x, y, z):
+def pyfai_to_image(x, y, z, image_frame=True):
     """
     Convert back to image coordinates
 
@@ -49,8 +44,14 @@ def pyfai_to_image(x, y, z):
         Y coordinate in meters
     z : np.ndarray
         Z coordinate in meters
+    image_frame : bool
+        If True, return image frame coordinates; otherwise, return psana laboratory frame coordinates
     """
     x = x * 1e6
     y = y * 1e6
     z = z * 1e6
-    return y, x, -z
+
+    if image_frame:
+        return y, x, -z
+    else:
+        return -x, y, -z

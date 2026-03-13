@@ -24,6 +24,8 @@ else:
 
 import os
 import re
+import tempfile
+from typing import Optional
 
 from LCLSGeom.calib import group_from_detname, source_from_detname, select_calib_file, clean_detname
 
@@ -32,7 +34,7 @@ from logging import getLogger
 logger: logging.Logger = getLogger(__name__)
 
 
-def get_geometry(exp: str, run: int, detname: str, skip_load: bool = False) -> str:
+def get_geometry(detname: str, exp: Optional[str]=None, run: Optional[int]=None) -> str:
     """
     Get the geometry file for a given experiment, run, and detector name. 
     If LCLS-II, check first the calibration database, then the default geometry file.
@@ -47,27 +49,31 @@ def get_geometry(exp: str, run: int, detname: str, skip_load: bool = False) -> s
         Run number
     detname : str
         Name of the detector
-    skip_load : bool, optional
-        If True, skip loading the geometry file and return the default geometry file path. Default is False.
-    
+
     Returns
     -------
     in_file : str
         Path to the geometry file
     """
-    try:
+    if exp and run:
         if IS_PSANA2:
-            in_file = pull(exp=exp, run=run, detname=detname, skip_load=skip_load)
-            logger.info(f"Geometry file for {detname} found in calibration database for experiment {exp} and run {run}.")
+            in_file = pull_from_database(exp=exp, run=run, detname=detname)
+            if in_file:
+                logger.info(f"Geometry file for {detname} found in calibration database for experiment {exp} and run {run}.")
         else:
-            in_file = check(exp=exp, run=run, detname=detname)
-            logger.info(f"Geometry file for {detname} found in experiment calibration directory for experiment {exp} and run {run}.")
-        return in_file
-    except FileNotFoundError as e:
-        logger.warning(str(e))
+            in_file = check_calibration_directory(exp=exp, run=run, detname=detname)
+            if detname.lower() == "rayonix":
+                in_file = get_default_Rayonix_geometry(exp=exp, run=run)
+            if in_file:
+                logger.info(f"Geometry file for {detname} found in experiment calibration directory for experiment {exp} and run {run}.")
+    
+        if not in_file:
+            logger.info(f"Fetching default geometry file for {detname}.")
+            in_file = get_default_geometry(detname=detname)
+    else:
         logger.info(f"Fetching default geometry file for {detname}.")
-        in_file = get_default_geometry(detname)
-        return in_file
+        in_file = get_default_geometry(detname=detname)
+    return in_file
 
 
 def get_default_geometry(detname: str) -> str:
@@ -79,7 +85,7 @@ def get_default_geometry(detname: str) -> str:
     ----------
     detname : str
         Name of the detector
-    
+
     Returns
     -------
     in_file : str
@@ -92,10 +98,10 @@ def get_default_geometry(detname: str) -> str:
         in_file = os.path.join(data_dir, f"geometry-def-{detname}.data")
         if not os.path.exists(in_file):
             logger.warning(f"Default geometry file not found for {detname} in psana installation. Fetching from templates.")
-            in_file = fetch_template(detname)
+            in_file = fetch_template(detname=detname)
 
     else:
-        in_file = fetch_template(detname)
+        in_file = fetch_template(detname=detname)
 
     if not os.path.exists(in_file):
         raise FileNotFoundError(f"Default geometry file not found for detector {detname}.")
@@ -103,10 +109,9 @@ def get_default_geometry(detname: str) -> str:
     return in_file
 
 
-def pull(exp: str, run: int, detname: str, skip_load: bool = False) -> str:
+def pull_from_database(exp: str, run: int, detname: str) -> Optional[str]:
     """
-    If LCLS-II, pull the geometry file for a given experiment, run, and detector name from the calibration database.
-    If LCLS-I, pull the geometry file for a given experiment, run, and detector name from the experiment calibration directory.
+    For LCLS-II, pull the geometry file for a given experiment, run, and detector name from the calibration database.
     
     Parameters
     ----------
@@ -116,35 +121,34 @@ def pull(exp: str, run: int, detname: str, skip_load: bool = False) -> str:
         Run number
     detname : str
         Name of the detector
-    skip_load : bool, optional
-        If True, skip loading the geometry file and return the default geometry file path. Default is False.
+
+    Returns
+    -------
+    in_file : str
+        Path to the geometry file if found written to scratch space, else None
     """
-    if skip_load:
-        ds = DataSource(exp=exp, run=run, skip_calib_load="all")
-    else:
-        ds = DataSource(exp=exp, run=run)
+    ds = DataSource(exp=exp, run=run)
     runs = next(ds.runs())
     detector = runs.Detector(detname)
     longname: str = detector.raw._uniqueid
     shortname: str = uc.detector_name_short(longname)
-    data, _ = wu.calib_constants(
+    results = wu.calib_constants(
         shortname,
         exp=exp,
+        run=run,
         ctype="geometry",
-        dtype="str",
         url=cc.URL,
     )
-    if data is None:
-        raise ValueError(f"Geometry for {detname} not found in calibration database for experiment {exp} and run {run}.")
+    if results is None:
+        return None
 
-    in_file = os.path.join(os.getcwd(), "temp.data")
-    with open(in_file, "w") as f:
-        f.write(data)
+    data, _ = results
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".data", delete=False) as in_file:
+        in_file.write(data)
+        return in_file.name
 
-    return in_file
 
-
-def push(exp: str, run: int, detname: str, out_file: str,) -> None:
+def push_to_database(exp: str, run: int, detname: str, out_file: str,) -> None:
     """
     Upload the geometry to the calibration database.
 
@@ -196,7 +200,7 @@ def push(exp: str, run: int, detname: str, out_file: str,) -> None:
     )
 
 
-def check(exp: str, run: int, detname: str) -> str:
+def check_calibration_directory(exp: str, run: int, detname: str) -> Optional[str]:
     """
     Check for the geometry file for a given experiment, run, and detector name in the experiment calibration directory.
 
@@ -212,7 +216,7 @@ def check(exp: str, run: int, detname: str) -> str:
     Returns
     -------
     in_file : str
-        Path to the geometry file if found, otherwise raises FileNotFoundError
+        Path to the geometry file if found, else None
     """
     cdir = f"/sdf/data/lcls/ds/{exp[:3]}/{exp}/calib"
     src = source_from_detname(detname, exp[:3])
@@ -220,48 +224,91 @@ def check(exp: str, run: int, detname: str) -> str:
     ctype = "geometry"
     calib_dir = os.path.join(cdir, src, group, ctype)
     in_file = select_calib_file(calib_dir, run)
-    if not os.path.exists(in_file):
-        raise FileNotFoundError(f"Geometry for {detname} not found in experiment calibration directory for experiment {exp} and run {run}.")
-
     return in_file
 
 
-def fetch_template(detname, pixel_size=None, shape=None):
+def fetch_template(detname):
     """
-    Get the template geometry file for a given detector name, and update it with the provided pixel size and shape if it is a Rayonix detector.
+    Get the template geometry file for a given detector name
 
     Parameters
     ----------
     detname : str
         Detector name
-    pixel_size : float
-        Pixel size in µm
-    shape : tuple
-        Detector shape
+
+    Returns
+    -------
+    in_file : str
+        Path to the template geometry file
     """
     current_dir = os.path.dirname(__file__)
     in_file = os.path.join(current_dir, "templates", f"geometry-def-{detname}.data")
 
     if not os.path.exists(in_file):
-        raise FileNotFoundError(f"Template not found for detector {detname}.")
+        raise FileNotFoundError(f"Detector {detname} not supported.")
+
+    return in_file
+
+
+def update_Rayonix_binning(in_file: str, binning_fast: int, binning_slow: int) -> str:
+    """
+    Update binning in a Rayonix MTRX:V2 geometry file with the corresponding shape and pixel size.
+
+    Parameters
+    ----------
+    file_path : str
+        Path to the geometry file to update
+    binning_fast : int
+        Fast binning factor
+    binning_slow : int
+        Slow binning factor
+        Pixel size in micrometers
+    """
+    shape_slow = int(7680 / binning_slow)
+    shape_fast = int(7680 / binning_fast)
+    pixel_size_slow = int(44 * binning_slow)
+    pixel_size_fast = int(44 * binning_fast)
+
+    with open(in_file, "r") as f:
+        lines = f.readlines()
+
+    pattern = re.compile(r"(MTRX:V2:)\d+:\d+:\d+:\d+")
+    replacement = f"MTRX:V2:{shape_slow}:{shape_fast}:{pixel_size_slow}:{pixel_size_fast}"
+
+    for i, line in enumerate(lines):
+        if "MTRX:V2" in line:
+            lines[i] = pattern.sub(replacement, line)
+            break
     
-    with open(in_file, "r") as file:
-        content = file.readlines()
+    data = "".join(lines)
+    return data 
 
-    if detname.lower() == "rayonix":
-        if pixel_size is None or shape is None:
-            raise ValueError("Pixel size and shape must be provided for Rayonix detector.")
 
-        for i, line in enumerate(content):
-            if "MTRX:V2" in line:
-                updated_line = re.sub(
-                    r"MTRX:V2:\d+:\d+:\d+:\d+",
-                    f"MTRX:V2:{shape[0]}:{shape[1]}:{pixel_size}:{pixel_size}",
-                    line
-                )
-                content[i] = updated_line
-                break
+def get_default_Rayonix_geometry(exp: str, run: int) -> str:
+    """
+    Get the default geometry file for the LCLS-I Rayonix detector with the appropriate binning based on pixel size.
 
-        with open(in_file, "w") as file:
-            file.writelines(content)
+    Parameters
+    ----------
+    exp : str
+        Experiment name
+    run : int
+        Run number
+
+
+    Returns
+    -------
+    in_file : str
+        Path to the default geometry file with updated binning for the Rayonix detector
+    """
+    ds = psana.DataSource(f"exp={exp}:run={run}:idx")
+    env = ds.env()
+    cfg = env.configStore()
+    binning_fast = cfg.get(psana.Rayonix.ConfigV2).binning_f()
+    binning_slow = cfg.get(psana.Rayonix.ConfigV2).binning_s()
+    in_file = get_default_geometry(detname="rayonix")
+    data = update_Rayonix_binning(in_file=in_file, binning_fast=binning_fast, binning_slow=binning_slow)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".data", delete=False) as tmp_file:
+        tmp_file.write(data)
+        in_file = tmp_file.name
     return in_file

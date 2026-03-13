@@ -6,10 +6,6 @@
 # DETECTOR   DetLab.0:Jungfrau.2 or jungfrau4M
 # CALIB_TYPE geometry
 # COMMENT:01 Manually created as an example for the 8-segment Jungfrau4M detector
-# COMMENT:02 2020-01-13 use Rebecca's drawing LCL5004-007815 to exaluate design segment centers
-# COMMENT:03 2020-01-21 Philip and Kaz segment numeration: from left to right, from top to bottom on design plot
-# COMMENT:04 Dan - pixel (0,0) of each segment is in bottom-left corner on the same plot
-# COMMENT:05 command to test geometry: python Detector/examples/ex_jungfrau_images.py 42
 
 # PARAM:01 PARENT     - name and version of the parent object
 # PARAM:02 PARENT_IND - index of the parent object
