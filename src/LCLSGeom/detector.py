@@ -1,4 +1,5 @@
 from pyFAI.detectors import Detector
+from LCLSGeom.calib import get_pyFAI_detname
 
 class Rayonix(Detector):
     """
@@ -162,7 +163,7 @@ class ePix10k2M(Detector):
     ):
         self.pixel_size = 0.0001
         self.pixel_size_um = 100.0
-        self.detname = "epix10k2M"
+        self.detname = "ePix10k2M"
         self.calib_shape = (16, 352, 384)
         self.n_modules = self.calib_shape[0]
         self.n_asics = 4
@@ -182,7 +183,7 @@ class ePix10kaQuad(Detector):
         self.pixel_size = 0.0001
         self.pixel_size_um = 100.0
         self.calib_shape = (4, 352, 384)
-        self.detname = "Epix10kaQuad"
+        self.detname = "ePix10kaQuad"
         self.n_modules = self.calib_shape[0]
         self.n_asics = 4
         self.asics_shape = (2, 2)
@@ -201,7 +202,7 @@ class Jungfrau05M(Detector):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
         self.calib_shape = (1, 512, 1024)
-        self.detname = "jungfrau05M"
+        self.detname = "Jungfrau05M"
         self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
@@ -220,7 +221,7 @@ class Jungfrau1M(Detector):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
         self.calib_shape = (2, 512, 1024)
-        self.detname = "jungfrau1M"
+        self.detname = "Jungfrau1M"
         self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
@@ -239,7 +240,7 @@ class Jungfrau4M(Detector):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
         self.calib_shape = (8, 512, 1024)
-        self.detname = "jungfrau4M"
+        self.detname = "Jungfrau4M"
         self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
@@ -258,7 +259,7 @@ class Jungfrau16M(Detector):
         self.pixel_size = 0.000075
         self.pixel_size_um = 75.0
         self.calib_shape = (32, 512, 1024)
-        self.detname = "jungfrau16M"
+        self.detname = "Jungfrau16M"
         self.n_modules = self.calib_shape[0]
         self.n_asics = 8
         self.asics_shape = (2, 4)
@@ -267,20 +268,20 @@ class Jungfrau16M(Detector):
         super().__init__(pixel1=self.pixel_size, pixel2=self.pixel_size, max_shape=(self.n_modules * self.asics_shape[0] * self.ss_size, self.asics_shape[1] * self.fs_size))
 
 DETECTOR_REGISTRY = {
-    ("rayonix", (1, 7680, 7680)): Rayonix,
-    ("rayonix", (1, 3840, 3840)): Rayonix2x2,
-    ("rayonix", (1, 2560, 2560)): Rayonix3x3,
-    ("rayonix", (1, 1920, 1920)): Rayonix4x4,
-    ("rayonix", (1, 1536, 1536)): Rayonix5x5,
-    ("rayonix", (1, 1280, 1280)): Rayonix6x6,
-    ("rayonix", (1, 960, 960)):   Rayonix8x8,
-    ("rayonix", (1, 768, 768)):   Rayonix10x10,
-    ("epix10k2m", (16, 352, 384)):   ePix10k2M,
-    ("epix10kaquad", (4, 352, 384)): ePix10kaQuad,
-    ("jungfrau05m", (1, 512, 1024)):  Jungfrau05M,
-    ("jungfrau1m", (2, 512, 1024)):  Jungfrau1M,
-    ("jungfrau4m", (8, 512, 1024)):  Jungfrau4M,
-    ("jungfrau16m", (32, 512, 1024)): Jungfrau16M,
+    ("Rayonix", (1, 7680, 7680)): Rayonix,
+    ("Rayonix", (1, 3840, 3840)): Rayonix2x2,
+    ("Rayonix", (1, 2560, 2560)): Rayonix3x3,
+    ("Rayonix", (1, 1920, 1920)): Rayonix4x4,
+    ("Rayonix", (1, 1536, 1536)): Rayonix5x5,
+    ("Rayonix", (1, 1280, 1280)): Rayonix6x6,
+    ("Rayonix", (1, 960, 960)):   Rayonix8x8,
+    ("Rayonix", (1, 768, 768)):   Rayonix10x10,
+    ("ePix10k2M", (16, 352, 384)):   ePix10k2M,
+    ("ePix10kaQuad", (4, 352, 384)): ePix10kaQuad,
+    ("Jungfrau05M", (1, 512, 1024)):  Jungfrau05M,
+    ("Jungfrau1M", (2, 512, 1024)):  Jungfrau1M,
+    ("Jungfrau4M", (8, 512, 1024)):  Jungfrau4M,
+    ("Jungfrau16M", (32, 512, 1024)): Jungfrau16M,
 }
 
 def get_detector(detname: str, shape: tuple) -> Detector:
@@ -290,12 +291,13 @@ def get_detector(detname: str, shape: tuple) -> Detector:
     Parameters
     ----------
     detname : str
-        Detector name
+        Detector name in psana (e.g., 'jungfrau', 'epix10k2M', etc.)
     shape : tuple
         Unassembled shape
     """
+    full_detname = get_pyFAI_detname(detname)
     for (name_pattern, expected_shape), detector_cls in DETECTOR_REGISTRY.items():
-        name_matches = name_pattern in detname.lower()
+        name_matches = full_detname == name_pattern
         shape_matches = shape == expected_shape
         if name_matches and shape_matches:
             Detector.registry[detector_cls.__name__.lower()] = detector_cls

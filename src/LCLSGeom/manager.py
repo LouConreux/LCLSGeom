@@ -27,7 +27,7 @@ import re
 import tempfile
 from typing import Optional
 
-from LCLSGeom.calib import group_from_detname, source_from_detname, select_calib_file, clean_detname
+from LCLSGeom.calib import group_from_detname, source_from_detname, select_calib_file, get_full_detname
 
 from logging import getLogger
 
@@ -84,14 +84,14 @@ def get_default_geometry(detname: str) -> str:
     Parameters
     ----------
     detname : str
-        Name of the detector
+        Name of the detector in psana
 
     Returns
     -------
     in_file : str
         Path to the default geometry file
     """
-    detname = clean_detname(detname)
+    detname = get_full_detname(detname)
     if IS_PSANA2:
         psana_path = psana.__path__[0]
         data_dir = os.path.join(psana_path, "pscalib", "geometry", "data")
@@ -148,7 +148,7 @@ def pull_from_database(exp: str, run: int, detname: str) -> Optional[str]:
         return in_file.name
 
 
-def push_to_database(exp: str, run: int, detname: str, out_file: str,) -> None:
+def push_to_database(exp: str, run: int, detname: str, out_file: str) -> None:
     """
     Upload the geometry to the calibration database.
 

@@ -26,10 +26,17 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/LouConreux/LCLSGeom"
 
+[project.scripts]
+lcls-convert = "LCLSGeom.convert:main"
+lcls-push-db = "LCLSGeom.push_to_database:main"
+
 [tool.setuptools]
-package-dir = {"" = "."}
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"LCLSGeom" = ["templates/*"]
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["LCLSGeom"]
 namespaces = false

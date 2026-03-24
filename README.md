@@ -1,13 +1,24 @@
 # LCLSGeom
-LCLSwapping Geometry tool - helper classes and functions for managing and converting geometry files for LCLS-I and LCLS-II detectors.
+LCLSwitching Geometry tool - helper classes and functions for managing and converting geometry files for LCLS-I and LCLS-II detectors.
 
 # Package Description
 
 This repository aims at providing an easy-to-use geometry management and conversion tool for LCLS scripts. The source code mainly relies on [PSCalib](https://github.com/lcls-psana/PSCalib/tree/master) for LCLS-I detectors and [psana](https://github.com/slac-lcls/lcls2/tree/master) for LCLS-II detectors, both repositeries designed by Mikhail Dubrovin.
 
-## Understanding Geometry Framework
+# Table of Contents
+- [Understanding Geometry Frameworks](#understanding-geometry-frameworks)
+  - [Psana and CrystFEL](#psana-and-crystfel)
+  - [PyFAI](#pyfai)
+  - [LCLSGeom Motivation](#lclsgeom-motivation)
+- [User Guide](#user-guide)
+  - [Installation](#installation)
+  - [Package Modules](#package-modules)
+  - [Command-line Interface](#command-line-interface)
+- [Organisation](#organization)
 
-I'll try to go very briefly on explaining the idea behind every geometry format, aiming to highlight the motivation for this project.
+## Understanding Geometry Frameworks 
+
+At LCLS, many geometry formats coexist. Some workflows rely on `CrystFEL` to process data, some others rely on `PyFAI`. This is without mentioning LCLS internal geometry framework which will be referred as `psana` in this package. This project aims to centralize the conversion scripts between those formats and to provide helper functions to interact with the geometry calibration LCLS instances.
 
 ### Psana & CrystFEL
 
@@ -17,10 +28,12 @@ Interaction Point (IP)
         ↓
   Detector Center
         ↓
-   Panels / ASICs
+      Panels
+        ↓
+      Asics
 ```
 
-Each level defines the position and orientation of its children relative to its own coordinate frame. Individual panels (or ASICs) are therefore described by their translation and rotation with respect to the detector center, which itself is positioned relative to the interaction point.
+Each level defines the position and orientation of its children relative to its own coordinate frame. Leaf objects (panels or ASICs) are therefore described by their translation and rotation with respect to the detector center, which itself is positioned relative to the interaction point.
 
 This approach is particularly well suited for modern pixel detectors used at LCLS, which are typically segmented detectors composed of multiple panels arranged in 3D space. The hierarchical structure allows accurate modeling of panel offsets, tilts, and metrology corrections.
 
@@ -76,7 +89,7 @@ For recap, changing rows in data is slower than changing columns when accessing 
 
 ### PyFAI
 
-Most PyFAI workflows, however, assume a single monolithic 2D detector with a regular pixel grid. In this model, pixels are indexed directly in a 2D array and their positions are inferred from the detector geometry parameters (distance, center etc...).
+Most PyFAI workflows, however, assume a single monolithic 2D detector with a regular pixel grid. In this model, pixels are indexed directly in a 2D grid and their positions are inferred from the detector geometry parameters. To be precise, 6 geometry parameters  (sample-PONI distance `dist`, PONI (for point of normal incidence) coordinates `poni1` and `poni2`, rotations around 1st, 2nd and 3rd axis `rot1`, `rot2` and `rot3`) *define* the geometry.
 
 For segmented detectors, this means that raw detector data must first be assembled into a single 2D image before PyFAI can operate on it. Assembly is the process of projecting the individual detector panels from their 3D positions into a continuous 2D pixel layout.
 
@@ -90,21 +103,45 @@ Instead of assembling the detector image at runtime, LCLSGeom constructs a virtu
 
 The true physical pixel positions are then encoded through the detector metrology information, which is passed to PyFAI. This allows PyFAI to correctly interpret the spatial layout of the pixels while still operating on a single 2D detector structure.
 
-The metrology information can originate from any .data geometry file. As a result, *the final 2D detector geometry depends on the chosen metrology*. If the input .data file presents axis offsets (such as a detector position which is not centered on the IP for example), the PyFAI PONI parameters will then be defined relative to those offsets.
+The metrology information can originate from any .data geometry file. As a result, *the PONI parameters are defined relatively to the metrology used as a reference*. If the input .data file presents axis offsets (such as a detector position which is not centered on the detector center for example), the PyFAI PONI parameters will then be defined relative to those offsets. Hence, implicetely, LCLSGeom will zero-out any offsets present in the metrology, unless specified the contrary. This is done by setting the parameter `image_frame=False` to any conversion scripts involving `PyFAI`.
 
 By encoding the detector layout in this way, LCLSGeom allows PyFAI to operate directly on detector data without requiring explicit image assembly, improving efficiency while preserving accurate detector geometry.
 
 ## User Guide
 
-LCLSGeom consists in two modules:
+### Installation
+
+LCLSGeom is available in both the LCLS-I (`psana1`) and LCLS-II (`psana2`) environments and does not require a separate installation in those contexts. To activate the appropriate environment on S3DF:
+```bash
+# LCLS-I (psana1)
+source /sdf/group/lcls/ds/ana/sw/conda1/manage/bin/psconda.sh
+
+# LCLS-II (psana2)
+source /sdf/group/lcls/ds/ana/sw/conda2/manage/bin/psconda.sh
+```
+
+For use outside of these environments, the package can be installed directly from the repository:
+```bash
+git clone https://github.com/slac-lcls/LCLSGeom.git
+cd LCLSGeom
+pip install .
+```
+
+> **Nota Bene:** LCLSGeom depends on `psana` and `PSCalib`, which are not available on PyPI and cannot be installed via `pip`. 
+> A standalone installation is therefore only functional for format conversions (`lcls-convert`). 
+> Features that interact with the calibration database (`lcls-push-db`, `get_geometry`) require a `psana1` or `psana2` environment.
+
+### Package Modules
+
+LCLSGeom consists of two modules:
 - _manager_: Handles relations with calibration databases (for LCLS-II detectors) or directories (for LCLS-I detectors).
 - _converter_: Provides quick conversions from one format to another. Available format are `psana`, `CrystFEL` and `pyFAI`.
 
-### From Psana Geometry to PyFAI detectors
+#### From Psana Geometry to PyFAI detectors
 
 The _PsanaToPyFAI_ class is able to parse a `psana` geometry file and converts the geometry information in a `pyFAI` detector object that can be used to perform any downstream `pyFAI` task.
 
-#### Example Usage
+##### Example Usage
 
 **Import required modules**
 ```python
@@ -119,7 +156,7 @@ run = 8
 detname = "epix10k2M"
 
 geometry_file = get_geometry(detname, exp, run) # <-- Will fetch geometry file stored in calibration directory or on LCLSGeom/templates if not found
-epix10k2M_detector = PsanaToPyFAI.convert(geometry_file, detname) # <-- Implicitely `image_frame=True` zero-out offsets to set up coordinates in image frame
+epix10k2M_detector = PsanaToPyFAI.convert(geometry_file, detname) # <-- Implicitly `image_frame=True` zero-out offsets to set up coordinates in image frame
 x, y, z = epix10k2M_detector.calc_cartesian_positions()
 x.mean()
 ```
@@ -135,7 +172,7 @@ run = 20
 detname = "jungfrau"
 
 geometry_file = get_geometry(detname, exp, run) # <-- Will fetch geometry file stored in slac-lcls/lcls2 or on LCLSGeom/templates if not found
-jungfrau_detector = PsanaToPyFAI.convert(geometry_file) # <-- Implicitely `image_frame=True` zero-out offsets to set up coordinates in image frame
+jungfrau_detector = PsanaToPyFAI.convert(geometry_file, detname) # <-- Implicitly `image_frame=True` zero-out offsets to set up coordinates in image frame
 x, y, z = jungfrau_detector.calc_cartesian_positions()
 x.mean()
 ```
@@ -144,12 +181,13 @@ Output
 0.0
 ```
 
-#### Nota Bene
+> **Nota Bene:** By default, PsanaToPyFAI.convert removes any axis offsets present in the metrology .data file. 
+> This ensures that the resulting PyFAI geometry is centered at (x, y) = (0, 0) and z = 0. 
+> In other words, the detector origin is placed at the image center, rather than at the interaction point (IP).
+> If needed, this behavior can be disabled by passing `image_frame=False`. In that case, the PyFAI geometry is defined in the laboratory coordinate frame.
 
-By default, PsanaToPyFAI.convert removes any axis offsets present in the metrology .data file. This ensures that the resulting PyFAI geometry is centered at (x, y) = (0, 0) and z = 0. In other words, the detector origin is placed at the image center, rather than at the interaction point (IP).
-If needed, this behavior can be disabled by passing `image_frame=False`. In that case, the PyFAI geometry is defined in the laboratory coordinate frame.
+###### Extra Example Usage
 
-##### Extra Arguments Example Usage
 If we convert the original .data example with an offset in the slow dimension, here is what we can get by passing `image_frame=False`.
  ```python
 exp = mfxx49820
@@ -166,45 +204,122 @@ Output
 -0.001
 ```
 
-### From Psana Geometry to CrystFEL geometry file
+#### From PyFAI detectors back to Psana
+
+The _PyFAIToPsana_ class is able to write a `psana` geometry file using a `PyFAI` detector object and a corresponding .poni file containing the PONI parameters necessary to define the entire detector geometry.
+This class is designed to update geometries after a pyFAI geometry optimization routine was called.
+
+##### Example Usage
+
+**Import required modules**
+```python
+from LCLSGeom.converter import PsanaToPyFAI, PyFAIToPsana
+```
+
+LCLS-I or LCLS-II experiment
+```python
+exp = "mfxx49820"
+run = 8
+detname = "epix10k2M"
+
+geometry_file = get_geometry(detname) # <-- Will fetch default geometry file
+epix10k2M_detector = PsanaToPyFAI.convert(geometry_file, detname) # <-- Implicitly `image_frame=True` zero-out offsets to set up coordinates in image frame
+# ----- Analysis ------
+# ...
+# ------- Done! -------
+poni_file = "path/to/file.poni" # <-- This is the result of the geometry calibration using PyFAI
+out_file = "path/to/desired/folder/<run>-end.data" # <-- New geometry
+PyFAIToPsana.convert(poni_file, epix10k2M_detector, out_file) # <-- Implicitly `image_frame=True` will write .data file in image frame
+```
+
+By default, the new geometry will be defined in the image frame, i.e, no 90° degree rotation around z-axis will be applied to match `psana` conventions.
+This can be disabled by passing `image_frame=False` to output the geometry file in the `psana` coordinate system.
+
+```python
+# ----- Analysis ------
+# ...
+# ------- Done! -------
+poni_file = "path/to/file.poni" # <-- This is the result of the geometry calibration using PyFAI
+out_file = "path/to/desired/folder/<run>-end.data" # <-- New geometry
+PyFAIToPsana.convert(poni_file, epix10k2M_detector, out_file, image_frame=False) # <-- This will add the 90 degree rotation at the IP-detector level
+```
+
+#### Switching between Psana and CrystFEL
 
 The _PsanaToCrystFEL_ class is able to parse a `psana` geometry file and converts the geometry information into a `CrystFEL` geometry file.
+The _CrystFELToPsana_ class is able to parse a `CrystFEL` geometry file and converts it back to a `psana` geometry file.
 
-#### Example Usage
+##### Example Usage
 ```python
 from LCLSGeom.manager import get_geometry
 from LCLSGeom.converter import PsanaToCrystFEL
 
-# LCLS-I experiment
+# LCLS-I or LCLS-II experiment
 exp = mfxx49820
 run = 8
 detname = "epix10k2M"
 
-data_file = get_geometry(exp, run, detname)
+data_file = get_geometry(detname, exp, run)
+geom_file = "path/to/desired/file.geom"
+PsanaToCrystFEL.convert(data_file, detname, geom_file)
+data_file_2 = "path/to/desired/file.data"
+CrystFELToPsana.convert(geom_file, detname, data_file_2)
 ```
 
-### From PyFAI detectors back to Psana
+### Command-line Interface
 
-# Organization
+LCLSGeom provides two command-line tools.
+
+**`lcls-convert`** converts geometry files between `psana` and `CrystFEL` formats. The conversion direction is inferred automatically from the file extensions (`.data` ↔ `.geom`).
+```bash
+# psana → CrystFEL
+lcls-convert -i input.data -d epix10k2M -o output.geom
+
+# CrystFEL → psana
+lcls-convert -i input.geom -d jungfrau -o output.data
+```
+
+**`lcls-push-db`** pushes a geometry file to the LCLS calibration database. This requires a `psana2` environment.
+```bash
+lcls-push-db -e mfxx49820 -r 8 -d epix10k2M -g path/to/geometry.data
+```
+
+| Argument | Description |
+|---|---|
+| `-e` | Experiment name |
+| `-r` | Run number |
+| `-d` | Detector name |
+| `-g` | Path to the geometry file |
+
+## Organization
 
 The package structure is organized as follows:
 
 ```
 LCLSGeom/
-├── LCLSGeom/       # Main Package
+├── src/LCLSGeom/   # Main Package
 │ ├── init.py       # Package initialization
 │ ├── converter.py  # Conversion Module
 │ ├── manager.py    # I/O File Module
 │ ├── detector.py   # Detector Definitions
 │ ├── geometry.py   # Geometric and Trigonometric Utils
-│ ├── frame.py      # Frame Transformation Utisl
+│ ├── frame.py      # Frame Transformation Utils
 │ ├── calib.py      # Calibration Path Utils
-│ ├── header.py     # Geometry File Header Utils
-│ ├── templates/    # Template Files
+│ ├── utils.py      # General Utils
+│ ├── convert.py            # Command-line Script for Conversion
+│ ├── push_to_database.py   # Command-line Script for Pushing to Database
+│ ├── templates/    # Template files for Defaulting Geometries
 │ │ ├── geometry-def-epix10k2M.data
-│ │ ├── ...
+│ │ ├── geometry-def-epix10kaQuad0.data
+│ │ ├── geometry-def-epix10kaQuad1.data
+│ │ ├── geometry-def-epix10kaQuad2.data
+│ │ ├── geometry-def-epix10kaQuad3.data
+│ │ ├── geometry-def-jungfrau1M.data
+│ │ ├── geometry-def-jungfrau4M.data
+│ │ ├── geometry-def-jungfrau05M.data
+│ │ ├── geometry-def-jungfrau16M.data
 │ │ └── geometry-def-rayonix.data
 ├── LICENSE
 ├── README.md
-└──  pyproject.toml # Dependencies and requirements
+└── pyproject.toml # Dependencies and requirements
 ```

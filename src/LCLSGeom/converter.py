@@ -18,8 +18,8 @@ from math import atan2, degrees
 import pyFAI
 from LCLSGeom.manager import get_default_geometry
 from LCLSGeom.detector import get_detector
-from LCLSGeom.calib import detname_to_pars
-from LCLSGeom.header import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel
+from LCLSGeom.calib import detname_to_pars, psana_to_pyFAI_detname
+from LCLSGeom.utils import str_is_segment_and_asic, sfields_to_xyz_vector, header_psana, header_crystfel, tailer_crystfel
 from LCLSGeom.frame import image_to_pyfai, pyfai_to_image
 from LCLSGeom.geometry import correct_geometry, angle_and_tilt, tilt_xy
 pyFAI.use_opencl = False
@@ -38,7 +38,7 @@ class PsanaToCrystFEL:
         self.geo = GeometryAccess(path=in_file, pbits=0, use_wide_pix_center=False)
 
     @classmethod
-    def convert(cls, in_file, out_file):
+    def convert(cls, in_file, detname, out_file):
         """
         Class method to convert psana .data geometry file to CrystFEL .geom geometry file
 
@@ -46,18 +46,22 @@ class PsanaToCrystFEL:
         ----------
         in_file : str
             Path to the input psana .data geometry file
+        detname : str
+            Detector name in psana (e.g., 'jungfrau', 'epix10k2M', etc.)
         out_file : str
             Path to the output CrystFEL .geom file
         """
         converter = cls(in_file)
-        converter.convert_data_to_geom(out_file=out_file)
+        converter.convert_data_to_geom(detname=detname, out_file=out_file)
 
-    def convert_data_to_geom(self, out_file):
+    def convert_data_to_geom(self, detname, out_file):
         """
         Write a CrystFEL .geom file from a psana .data file
 
         Parameters
         ----------
+        detname : str
+            Detector name in psana (e.g., 'jungfrau', 'epix10k2M', etc.)
         out_file : str
             Path to the output CrystFEL .geom file
         """
@@ -74,7 +78,9 @@ class PsanaToCrystFEL:
         x.shape = shape
         y.shape = shape
         z.shape = shape
-        txt = header_crystfel()
+        distance = np.abs(np.round(np.mean(z)))*1e-6
+        pyFAI_detname = psana_to_pyFAI_detname.get(detname.lower())
+        txt = header_crystfel(distance=distance)
         for n in range(shape[0]):
             txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
@@ -103,6 +109,8 @@ class PsanaToCrystFEL:
                     + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1) \
                     + '%s/no_index = 0' % (pref) \
                     + '\n'
+                
+                txt += tailer_crystfel(detname=pyFAI_detname)
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
@@ -131,6 +139,8 @@ class PsanaToPyFAI:
         ----------
         in_file : str
             Path to the input psana .data geometry file
+        detname : str
+            Detector name in psana (e.g., 'jungfrau', 'epix10k2M', etc.)
         image_frame : bool
             If True, use image frame coordinates; otherwise, use psana laboratory frame coordinates
 
@@ -330,7 +340,7 @@ class PyFAIToPsana:
         x = self.X.reshape(self.detector.calib_shape)
         y = self.Y.reshape(self.detector.calib_shape)
         z = self.Z.reshape(self.detector.calib_shape)
-        x, y, z = pyfai_to_image(x, y, z, image_frame)
+        x, y, z = pyfai_to_image(x, y, z)
         geo = self.detector.geo
         top = geo.get_top_geo()
         child = top.get_list_of_children()[0]
@@ -365,8 +375,12 @@ class PyFAIToPsana:
             recs += '\n%12s  0 %12s %2d' %(childname, self.detector.segname, p)\
                 +'  %8d %8d %8d %7.0f %6.0f %6.0f   %8.5f  %8.5f  %8.5f'%\
                 (vcent[0], vcent[1], vcent[2], angle_z, angle_y, angle_x, tilt_z, tilt_y, tilt_x)
-        recs += '\n%12s  0 %12s  0' %(topname, childname)\
-            +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance)
+        if image_frame:
+            recs += '\n%12s  0 %12s  0' %(topname, childname)\
+                +'         0        0 %8d       0      0      0    0.00000   0.00000   0.00000' % (distance)
+        else:
+            recs += '\n%12s  0 %12s  0' %(topname, childname)\
+                +'         0        0 %8d      90      0      0    0.00000   0.00000   0.00000' % (distance)
         f=open(out_file,'w')
         f.write(recs)
         f.close()
@@ -427,7 +441,7 @@ class PyFAIToCrystFEL:
         pix_size = seg.pixel_scale_size()
         _, nasics_in_cols = seg.number_of_asics_in_rows_cols()
         nasicsf = nasics_in_cols
-        txt = header_crystfel()
+        txt = header_crystfel(self.params[0])
         for n in range(nsegs):
             txt += '\n'
             for a,(r0,c0) in enumerate(seg.asic0indices()):
@@ -456,6 +470,9 @@ class PyFAIToCrystFEL:
                     + '%s/max_ss = %d' % (pref, n*srows + (a//nasicsf+1)*arows - 1)\
                     + '%s/no_index = 0' % (pref)\
                     + '\n'
+            
+                txt += tailer_crystfel(self.detector.detname)
+
         if out_file is not None:
             f = open(out_file,'w')
             f.write(txt)
@@ -592,12 +609,13 @@ class CrystFELToPsana:
         f.close()
 
     def convert_geom_to_data(self, detname, out_file):
-        detname_lower = detname.lower()
-        if "epix10kaquad" in detname_lower:
-            panelasics = detname_to_pars.get("epix10kaquad", None)
-        else:
-            panelasics = detname_to_pars.get(detname_lower, None)
-        self.geom_to_data(panelasics, detname, out_file)
+        pyFAI_detname = psana_to_pyFAI_detname.get(detname.lower())
+        if pyFAI_detname is None:
+            raise ValueError(f"Detector name {detname} not recognized.")
+        panelasics = detname_to_pars.get(pyFAI_detname.lower())
+        if panelasics is None:
+            raise ValueError(f"Detector name {detname} not implemented.")
+        self.geom_to_data(panelasics, pyFAI_detname, out_file)
 
 class CrystFELToPyFAI:
     """

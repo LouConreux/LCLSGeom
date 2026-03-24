@@ -46,6 +46,7 @@ def pyfai_to_image(x, y, z, image_frame=True):
         Z coordinate in meters
     image_frame : bool
         If True, return image frame coordinates; otherwise, return psana laboratory frame coordinates
+
     """
     x = x * 1e6
     y = y * 1e6
