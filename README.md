@@ -1,8 +1,5 @@
 # LCLSGeom
 LCLSwitching Geometry tool - helper classes and functions for managing and converting geometry files for LCLS-I and LCLS-II detectors.
-
-# Package Description
-
 This repository aims at providing an easy-to-use geometry management and conversion tool for LCLS scripts. The source code mainly relies on [PSCalib](https://github.com/lcls-psana/PSCalib/tree/master) for LCLS-I detectors and [psana](https://github.com/slac-lcls/lcls2/tree/master) for LCLS-II detectors, both repositeries designed by Mikhail Dubrovin.
 
 # Table of Contents
@@ -85,7 +82,6 @@ For example, here is the structure of a `psana` .data file:
 ```
 
 As you can notice, this example .data file specifies an offset in the fast dimension of -0.001 m, a detector-sample distance of 0.1 m and that the detector is rotated by 90 degrees around the detector's normal.
-For recap, changing rows in data is slower than changing columns when accessing data `data[row][column]`. Hence the slow dimension is the data row dimension and the fast dimension is the data column dimension.
 
 ### PyFAI
 
@@ -124,18 +120,18 @@ For use outside of these environments, the package can be installed directly fro
 ```bash
 git clone https://github.com/slac-lcls/LCLSGeom.git
 cd LCLSGeom
-pip install .
+pip install -e .
 ```
 
 > **Nota Bene:** LCLSGeom depends on `psana` and `PSCalib`, which are not available on PyPI and cannot be installed via `pip`. 
 > A standalone installation is therefore only functional for format conversions (`lcls-convert`). 
-> Features that interact with the calibration database (`lcls-push-db`, `get_geometry`) require a `psana1` or `psana2` environment.
+> Features that interact with the calibration database or `psana` (`lcls-push-db`, `get_geometry`) require a `psana1` or `psana2` environment.
 
 ### Package Modules
 
 LCLSGeom consists of two modules:
 - _manager_: Handles relations with calibration databases (for LCLS-II detectors) or directories (for LCLS-I detectors).
-- _converter_: Provides quick conversions from one format to another. Available format are `psana`, `CrystFEL` and `pyFAI`.
+- _converter_: Provides quick conversions from one format to another. Available formats are `psana`, `CrystFEL` and `pyFAI`.
 
 #### From Psana Geometry to PyFAI detectors
 
@@ -186,7 +182,7 @@ Output
 > In other words, the detector origin is placed at the image center, rather than at the interaction point (IP).
 > If needed, this behavior can be disabled by passing `image_frame=False`. In that case, the PyFAI geometry is defined in the laboratory coordinate frame.
 
-###### Extra Example Usage
+###### Bonus Example Usage
 
 If we convert the original .data example with an offset in the slow dimension, here is what we can get by passing `image_frame=False`.
  ```python
