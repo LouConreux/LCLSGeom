@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "LCLSGeom"
-version = "0.1.0"
+version = "0.2.0"
 description = "Miscellaneous functions for converting geometry files for LCLS geometry calibrations and optimizations."
 readme = "README.md"
 authors = [
